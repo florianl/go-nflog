@@ -18,6 +18,9 @@ type Nflog struct {
 	Con *netlink.Conn
 }
 
+// Msg contains all the information of a connection
+type Msg map[int][]byte
+
 // Open a connection to the netfilter subsystem
 func Open() (*Nflog, error) {
 	var nflog Nflog
@@ -36,19 +39,22 @@ func (nflog *Nflog) Close() error {
 	return nflog.Con.Close()
 }
 
+// HookFunc is a function, that receives events from a Netlinkgroup
+type HookFunc func(m Msg) int
+
 // Register your own function as callback for a netfilter log group
-func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode byte, fn func() int) error {
+func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode byte, fn HookFunc) error {
 
 	if afFamily != unix.AF_INET6 && afFamily != unix.AF_INET {
 		return ErrAfFamily
 	}
 
-	if copyMode != NfLogCopyNone && copyMode != NfLogCopyMeta && copyMode != NfLogCopyPacket {
+	if copyMode != NfUlnlCopyNone && copyMode != NfUlnlCopyMeta && copyMode != NfUlnlCopyPacket {
 		return ErrCopyMode
 	}
 	// unbinding existing handler (if any)
 	cmd, err := netlink.MarshalAttributes([]netlink.Attribute{
-		{Type: nfLogCfgCmd, Data: []byte{nfLogCfgCmdPfUnbind}},
+		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdPfUnbind}},
 	})
 	if err != nil {
 		return err
@@ -57,7 +63,7 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 	data = append(data, cmd...)
 	req := netlink.Message{
 		Header: netlink.Header{
-			Type:  netlink.HeaderType((nfLogSubSysUlog << 8) | nfLogMsgConfig),
+			Type:  netlink.HeaderType((nfnlSubSysUlog << 8) | nfUlnlMsgConfig),
 			Flags: netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge,
 		},
 		Data: data,
@@ -69,7 +75,7 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 
 	// binding to family
 	cmd, err = netlink.MarshalAttributes([]netlink.Attribute{
-		{Type: nfLogCfgCmd, Data: []byte{nfLogCfgCmdPfBind}},
+		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdPfBind}},
 	})
 	if err != nil {
 		return err
@@ -78,7 +84,7 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 	data = append(data, cmd...)
 	req = netlink.Message{
 		Header: netlink.Header{
-			Type:     netlink.HeaderType((nfLogSubSysUlog << 8) | nfLogMsgConfig),
+			Type:     netlink.HeaderType((nfnlSubSysUlog << 8) | nfUlnlMsgConfig),
 			Flags:    netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge,
 			Sequence: seq,
 		},
@@ -90,7 +96,7 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 
 	// binding to the requested group
 	cmd, err = netlink.MarshalAttributes([]netlink.Attribute{
-		{Type: nfLogCfgCmd, Data: []byte{nfLogCfgCmdBind}},
+		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdBind}},
 	})
 	if err != nil {
 		return err
@@ -99,7 +105,7 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 	data = append(data, cmd...)
 	req = netlink.Message{
 		Header: netlink.Header{
-			Type:     netlink.HeaderType((nfLogSubSysUlog << 8) | nfLogMsgConfig),
+			Type:     netlink.HeaderType((nfnlSubSysUlog << 8) | nfUlnlMsgConfig),
 			Flags:    netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge,
 			Sequence: seq,
 		},
@@ -111,7 +117,7 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 
 	// set copy mode
 	cmd, err = netlink.MarshalAttributes([]netlink.Attribute{
-		{Type: nfLogCfgMode, Data: []byte{0xff, 0xff, 0xff, 0xff, copyMode, 0x0}},
+		{Type: nfUlACfgMode, Data: []byte{0x00, 0x00, 0x00, 0x00, copyMode, 0x0}},
 	})
 	if err != nil {
 		return err
@@ -120,7 +126,7 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 	data = append(data, cmd...)
 	req = netlink.Message{
 		Header: netlink.Header{
-			Type:     netlink.HeaderType((nfLogSubSysUlog << 8) | nfLogMsgConfig),
+			Type:     netlink.HeaderType((nfnlSubSysUlog << 8) | nfUlnlMsgConfig),
 			Flags:    netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge,
 			Sequence: seq,
 		},
@@ -138,8 +144,18 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 			}
 
 			for _, msg := range reply {
-				fmt.Println(msg)
-				if ret := fn(); ret != 0 {
+				fmt.Printf("%#v\n", msg)
+				if msg.Header.Type == netlink.HeaderTypeDone {
+					// this is the last message of a batch
+					// continue to receive messages
+					break
+				}
+				m, err := parseMsg(msg)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				if ret := fn(m); ret != 0 {
 					return
 				}
 			}
@@ -207,4 +223,19 @@ func htons(i uint16) uint16 {
 	buf := make([]byte, 2)
 	nlenc.PutUint16(buf, i)
 	return binary.BigEndian.Uint16(buf)
+}
+
+func parseMsg(msg netlink.Message) (Msg, error) {
+	if msg.Header.Type&netlink.HeaderTypeError == netlink.HeaderTypeError {
+		errMsg, err := unmarschalErrMsg(msg.Data)
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("%#v", errMsg)
+	}
+	m, err := extractAttributes(msg.Data)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }

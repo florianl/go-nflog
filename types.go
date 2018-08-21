@@ -6,11 +6,13 @@ import "errors"
 
 // Various Copy modes
 const (
-	NfLogCopyNone   byte = 0x00
-	NfLogCopyMeta   byte = 0x01
-	NfLogCopyPacket byte = 0x02
+	NfUlnlCopyNone   byte = 0x00
+	NfUlnlCopyMeta   byte = 0x01
+	NfUlnlCopyPacket byte = 0x02
 
-	_nfLogCopyMax = 0x03
+	NfUlnlCfgFSeq       byte = 0x0001
+	NfUlnlCfgFSeqGlobal byte = 0x0002
+	NfUlnlCfgFConntrack byte = 0x0004
 )
 
 // Various errors
@@ -20,30 +22,50 @@ var (
 )
 
 // nfLogSubSysUlog the netlink subsystem we will query
-const nfLogSubSysUlog = 0x04
+const nfnlSubSysUlog = 0x04
 
 // Message types
 const (
 	// Kernel to userspace
-	nfLogMsgPacket = 0x0
+	nfUlnlMsgPacket = 0x0
 	// Userspace to kernel
-	nfLogMsgConfig = 0x1
+	nfUlnlMsgConfig = 0x1
 )
 
 const (
-	nfLogCfgUnspec    = 0x0
-	nfLogCfgCmd       = 0x1
-	nfLogCfgMode      = 0x2
-	nfLogCfgNlBufSize = 0x3
-	nfLogCfgTimeOut   = 0x4 /* in 1/100 s */
-	nfLogCfgQThresh   = 0x5
-	nfLogCfgFlags     = 0x6
+	nfUlACfgUnspec    = 0x0
+	nfUlACfgCmd       = 0x1
+	nfUlACfgMode      = 0x2
+	nfUlACfgNlBufSize = 0x3
+	nfUlACfgTimeOut   = 0x4 /* in 1/100 s */
+	nfUlACfgQThresh   = 0x5
+	nfUlACfgFlags     = 0x6
 )
 
 const (
-	nfLogCfgCmdNone     = 0x0
-	nfLogCfgCmdBind     = 0x1
-	nfLogCfgCmdUnbind   = 0x2
-	nfLogCfgCmdPfBind   = 0x3
-	nfLogCfgCmdPfUnbind = 0x4
+	nfUlnlCfgCmdNone     = 0x0
+	nfUlnlCfgCmdBind     = 0x1
+	nfUlnlCfgCmdUnbind   = 0x2
+	nfUlnlCfgCmdPfBind   = 0x3
+	nfUlnlCfgCmdPfUnbind = 0x4
+)
+
+const (
+	nfUcketHdr             = 1
+	nfUlaAttrMark          = 2
+	nfUlaAttrTimestamp     = 3
+	nfUlaAttrIfindexIndev  = 4
+	nfUlaAttrIfindexOutdev = 5
+	nfUlaAttrHwaddr        = 6
+	nfUlaAttrPayload       = 7
+	nfUlaAttrPrefix        = 8
+	nfUlaAttrUID           = 9
+	nfUlaAttrSeq           = 10
+	nfUlaAttrSeqGlobal     = 11
+	nfUlaAttrGID           = 12
+	nfUlaAttrHwType        = 13
+	nfUlaAttrHwHeader      = 14
+	nfUlaAttrHwLen         = 15
+	nfUlaAttrCt            = 16
+	nfUlaAttrCtInfo        = 17
 )
