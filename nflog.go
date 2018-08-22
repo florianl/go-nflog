@@ -40,6 +40,7 @@ func (nflog *Nflog) Close() error {
 }
 
 // HookFunc is a function, that receives events from a Netlinkgroup
+// To stop receiving messages on this HookFunc, return something different than 0
 type HookFunc func(m Msg) int
 
 // Register your own function as callback for a netfilter log group
@@ -117,7 +118,49 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 
 	// set copy mode
 	cmd, err = netlink.MarshalAttributes([]netlink.Attribute{
-		{Type: nfUlACfgMode, Data: []byte{0x00, 0x00, 0x00, 0x00, copyMode, 0x0}},
+		{Type: nfUlACfgMode, Data: []byte{0xff, 0xff, 0xff, 0xff, copyMode, 0x0}},
+	})
+	if err != nil {
+		return err
+	}
+	data = putExtraHeader(uint8(unix.AF_UNSPEC), unix.NFNETLINK_V0, htons(uint16(group)))
+	data = append(data, cmd...)
+	req = netlink.Message{
+		Header: netlink.Header{
+			Type:     netlink.HeaderType((nfnlSubSysUlog << 8) | nfUlnlMsgConfig),
+			Flags:    netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge,
+			Sequence: seq,
+		},
+		Data: data,
+	}
+	if _, err := nflog.execute(req); err != nil {
+		return err
+	}
+
+	// set flags
+	cmd, err = netlink.MarshalAttributes([]netlink.Attribute{
+		{Type: nfUlACfgFlags, Data: []byte{0x0, 0x3}},
+	})
+	if err != nil {
+		return err
+	}
+	data = putExtraHeader(uint8(unix.AF_UNSPEC), unix.NFNETLINK_V0, htons(uint16(group)))
+	data = append(data, cmd...)
+	req = netlink.Message{
+		Header: netlink.Header{
+			Type:     netlink.HeaderType((nfnlSubSysUlog << 8) | nfUlnlMsgConfig),
+			Flags:    netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge,
+			Sequence: seq,
+		},
+		Data: data,
+	}
+	if _, err := nflog.execute(req); err != nil {
+		return err
+	}
+
+	// set timeout
+	cmd, err = netlink.MarshalAttributes([]netlink.Attribute{
+		{Type: nfUlACfgTimeOut, Data: []byte{0x0, 0x0, 0x0, 0x7}},
 	})
 	if err != nil {
 		return err
@@ -137,6 +180,29 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 	}
 
 	go func() {
+		defer func() {
+			// unbinding from group
+			cmd, err = netlink.MarshalAttributes([]netlink.Attribute{
+				{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdUnbind}},
+			})
+			if err != nil {
+				// TODO: handle this error
+				return
+			}
+			data = putExtraHeader(uint8(afFamily), unix.NFNETLINK_V0, 0)
+			data = append(data, cmd...)
+			req = netlink.Message{
+				Header: netlink.Header{
+					Type:  netlink.HeaderType((nfnlSubSysUlog << 8) | nfUlnlMsgConfig),
+					Flags: netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge,
+				},
+				Data: data,
+			}
+			if _, err := nflog.execute(req); err != nil {
+				// TODO: handle this error
+				return
+			}
+		}()
 		for {
 			reply, err := nflog.Con.Receive()
 			if err != nil {
@@ -144,7 +210,6 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 			}
 
 			for _, msg := range reply {
-				fmt.Printf("%#v\n", msg)
 				if msg.Header.Type == netlink.HeaderTypeDone {
 					// this is the last message of a batch
 					// continue to receive messages
