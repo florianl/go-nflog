@@ -51,21 +51,23 @@ const (
 )
 
 const (
-	nfUcketHdr             = 1
-	nfUlaAttrMark          = 2
-	nfUlaAttrTimestamp     = 3
-	nfUlaAttrIfindexIndev  = 4
-	nfUlaAttrIfindexOutdev = 5
-	nfUlaAttrHwaddr        = 6
-	nfUlaAttrPayload       = 7
-	nfUlaAttrPrefix        = 8
-	nfUlaAttrUID           = 9
-	nfUlaAttrSeq           = 10
-	nfUlaAttrSeqGlobal     = 11
-	nfUlaAttrGID           = 12
-	nfUlaAttrHwType        = 13
-	nfUlaAttrHwHeader      = 14
-	nfUlaAttrHwLen         = 15
-	nfUlaAttrCt            = 16
-	nfUlaAttrCtInfo        = 17
+	nfUlaAttrPacketHdr         = 1
+	nfUlaAttrMark              = 2
+	nfUlaAttrTimestamp         = 3
+	nfUlaAttrIfindexIndev      = 4
+	nfUlaAttrIfindexOutdev     = 5
+	nfUlaAttrIfindexPhysIndev  = 6
+	nfUlaAttrIfindexPhysOutdev = 7
+	nfUlaAttrHwaddr            = 8
+	nfUlaAttrPayload           = 9
+	nfUlaAttrPrefix            = 10
+	nfUlaAttrUID               = 11
+	nfUlaAttrSeq               = 12
+	nfUlaAttrSeqGlobal         = 13
+	nfUlaAttrGID               = 14
+	nfUlaAttrHwType            = 15
+	nfUlaAttrHwHeader          = 16
+	nfUlaAttrHwLen             = 17
+	nfUlaAttrCt                = 18
+	nfUlaAttrCtInfo            = 19
 )
