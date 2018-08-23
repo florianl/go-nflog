@@ -10,9 +10,9 @@ const (
 	NfUlnlCopyMeta   byte = 0x01
 	NfUlnlCopyPacket byte = 0x02
 
-	NfUlnlCfgFSeq       byte = 0x0001
-	NfUlnlCfgFSeqGlobal byte = 0x0002
-	NfUlnlCfgFConntrack byte = 0x0004
+	NfUlnlCfgFSeq       uint16 = 0x0001
+	NfUlnlCfgFSeqGlobal uint16 = 0x0002
+	NfUlnlCfgFConntrack uint16 = 0x0004
 )
 
 // Various errors

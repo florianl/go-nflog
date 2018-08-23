@@ -5,6 +5,7 @@ package nflog
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 
 	"github.com/mdlayher/netlink"
@@ -16,7 +17,18 @@ import (
 type Nflog struct {
 	// Con is the pure representation of a netlink socket
 	Con *netlink.Conn
+
+	flags    uint16
+	copyMode uint8
+	bufsize  uint32
+	qthresh  uint32
+	timeout  uint32
 }
+
+// Various errors
+var (
+	ErrUnknownFlag = errors.New("Can not set flag")
+)
 
 // Msg contains all the information of a connection
 type Msg map[int][]byte
@@ -37,6 +49,39 @@ func Open() (*Nflog, error) {
 // Close the connection to the conntrack subsystem
 func (nflog *Nflog) Close() error {
 	return nflog.Con.Close()
+}
+
+// SetQThresh sets the queue thresh for this connection
+func (nflog *Nflog) SetQThresh(qthresh uint32) error {
+	nflog.qthresh = qthresh
+	return nil
+}
+
+// SetNlBufSize set the buffer size for this netlink connection
+func (nflog *Nflog) SetNlBufSize(size uint32) error {
+	nflog.bufsize = size
+	return nil
+}
+
+// SetTimeout in 1/100 s for this connection
+func (nflog *Nflog) SetTimeout(timeout uint32) error {
+	nflog.timeout = timeout
+	return nil
+}
+
+// SetFlag sets a specified flags on this connection
+func (nflog *Nflog) SetFlag(flag uint16) error {
+	if flag != NfUlnlCfgFSeq && flag != NfUlnlCfgFSeqGlobal && flag != NfUlnlCfgFConntrack {
+		return ErrUnknownFlag
+	}
+	nflog.flags |= flag
+	return nil
+}
+
+// RemoveAllFlags deletes all flags, that were set on this connection
+func (nflog *Nflog) RemoveAllFlags() error {
+	nflog.flags = 0
+	return nil
 }
 
 // HookFunc is a function, that receives events from a Netlinkgroup
