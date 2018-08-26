@@ -18,11 +18,10 @@ type Nflog struct {
 	// Con is the pure representation of a netlink socket
 	Con *netlink.Conn
 
-	flags    uint16
-	copyMode uint8
-	bufsize  uint32
-	qthresh  uint32
-	timeout  uint32
+	flags   []byte // uint16
+	bufsize []byte //uint32
+	qthresh []byte //uint32
+	timeout []byte //uint32
 }
 
 // Various errors
@@ -43,6 +42,11 @@ func Open() (*Nflog, error) {
 	}
 	nflog.Con = con
 
+	nflog.flags = make([]byte, 2)
+	nflog.timeout = make([]byte, 4)
+	nflog.bufsize = make([]byte, 4)
+	nflog.qthresh = make([]byte, 4)
+
 	return &nflog, nil
 }
 
@@ -53,19 +57,19 @@ func (nflog *Nflog) Close() error {
 
 // SetQThresh sets the queue thresh for this connection
 func (nflog *Nflog) SetQThresh(qthresh uint32) error {
-	nflog.qthresh = qthresh
+	nflog.qthresh = htonsU32(qthresh)
 	return nil
 }
 
 // SetNlBufSize set the buffer size for this netlink connection
 func (nflog *Nflog) SetNlBufSize(size uint32) error {
-	nflog.bufsize = size
+	nflog.bufsize = htonsU32(size)
 	return nil
 }
 
 // SetTimeout in 1/100 s for this connection
 func (nflog *Nflog) SetTimeout(timeout uint32) error {
-	nflog.timeout = timeout
+	nflog.timeout = htonsU32(timeout)
 	return nil
 }
 
@@ -74,13 +78,13 @@ func (nflog *Nflog) SetFlag(flag uint16) error {
 	if flag != NfUlnlCfgFSeq && flag != NfUlnlCfgFSeqGlobal && flag != NfUlnlCfgFConntrack {
 		return ErrUnknownFlag
 	}
-	nflog.flags |= flag
+	nflog.flags[0] |= byte(flag)
 	return nil
 }
 
 // RemoveAllFlags deletes all flags, that were set on this connection
 func (nflog *Nflog) RemoveAllFlags() error {
-	nflog.flags = 0
+	nflog.flags = []byte{0x0, 0x0}
 	return nil
 }
 
@@ -98,152 +102,74 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 	if copyMode != NfUlnlCopyNone && copyMode != NfUlnlCopyMeta && copyMode != NfUlnlCopyPacket {
 		return ErrCopyMode
 	}
+
 	// unbinding existing handler (if any)
-	cmd, err := netlink.MarshalAttributes([]netlink.Attribute{
+	seq, err := nflog.setConfig(uint8(afFamily), 0, 0, []netlink.Attribute{
 		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdPfUnbind}},
 	})
 	if err != nil {
 		return err
 	}
-	data := putExtraHeader(uint8(afFamily), unix.NFNETLINK_V0, 0)
-	data = append(data, cmd...)
-	req := netlink.Message{
-		Header: netlink.Header{
-			Type:  netlink.HeaderType((nfnlSubSysUlog << 8) | nfUlnlMsgConfig),
-			Flags: netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge,
-		},
-		Data: data,
-	}
-	seq, err := nflog.execute(req)
-	if err != nil {
-		return err
-	}
 
 	// binding to family
-	cmd, err = netlink.MarshalAttributes([]netlink.Attribute{
+	_, err = nflog.setConfig(uint8(afFamily), seq, 0, []netlink.Attribute{
 		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdPfBind}},
 	})
 	if err != nil {
 		return err
 	}
-	data = putExtraHeader(uint8(afFamily), unix.NFNETLINK_V0, 0)
-	data = append(data, cmd...)
-	req = netlink.Message{
-		Header: netlink.Header{
-			Type:     netlink.HeaderType((nfnlSubSysUlog << 8) | nfUlnlMsgConfig),
-			Flags:    netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge,
-			Sequence: seq,
-		},
-		Data: data,
-	}
-	if _, err := nflog.execute(req); err != nil {
-		return err
-	}
 
-	// binding to the requested group
-	cmd, err = netlink.MarshalAttributes([]netlink.Attribute{
+	// binding to generic group
+	_, err = nflog.setConfig(uint8(unix.AF_UNSPEC), seq, 0, []netlink.Attribute{
 		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdBind}},
 	})
 	if err != nil {
 		return err
 	}
-	data = putExtraHeader(uint8(unix.AF_UNSPEC), unix.NFNETLINK_V0, htons(uint16(group)))
-	data = append(data, cmd...)
-	req = netlink.Message{
-		Header: netlink.Header{
-			Type:     netlink.HeaderType((nfnlSubSysUlog << 8) | nfUlnlMsgConfig),
-			Flags:    netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge,
-			Sequence: seq,
-		},
-		Data: data,
-	}
-	if _, err := nflog.execute(req); err != nil {
-		return err
-	}
 
-	// set copy mode
-	cmd, err = netlink.MarshalAttributes([]netlink.Attribute{
-		{Type: nfUlACfgMode, Data: []byte{0xff, 0xff, 0xff, 0xff, copyMode, 0x0}},
+	// binding to the requested group
+	_, err = nflog.setConfig(uint8(unix.AF_UNSPEC), seq, uint16(group), []netlink.Attribute{
+		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdBind}},
 	})
 	if err != nil {
 		return err
 	}
-	data = putExtraHeader(uint8(unix.AF_UNSPEC), unix.NFNETLINK_V0, htons(uint16(group)))
-	data = append(data, cmd...)
-	req = netlink.Message{
-		Header: netlink.Header{
-			Type:     netlink.HeaderType((nfnlSubSysUlog << 8) | nfUlnlMsgConfig),
-			Flags:    netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge,
-			Sequence: seq,
-		},
-		Data: data,
-	}
-	if _, err := nflog.execute(req); err != nil {
+
+	// set copy mode and buffer size
+	data := append(nflog.bufsize, copyMode)
+	data = append(data, 0x0)
+	_, err = nflog.setConfig(uint8(unix.AF_UNSPEC), seq, uint16(group), []netlink.Attribute{
+		{Type: nfUlACfgMode, Data: data},
+	})
+	if err != nil {
 		return err
 	}
 
 	// set flags
-	cmd, err = netlink.MarshalAttributes([]netlink.Attribute{
-		{Type: nfUlACfgFlags, Data: []byte{0x0, 0x3}},
-	})
-	if err != nil {
-		return err
-	}
-	data = putExtraHeader(uint8(unix.AF_UNSPEC), unix.NFNETLINK_V0, htons(uint16(group)))
-	data = append(data, cmd...)
-	req = netlink.Message{
-		Header: netlink.Header{
-			Type:     netlink.HeaderType((nfnlSubSysUlog << 8) | nfUlnlMsgConfig),
-			Flags:    netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge,
-			Sequence: seq,
-		},
-		Data: data,
-	}
-	if _, err := nflog.execute(req); err != nil {
-		return err
+	if nflog.flags[0] != byte(0) {
+		_, err = nflog.setConfig(uint8(unix.AF_UNSPEC), seq, uint16(group), []netlink.Attribute{
+			{Type: nfUlACfgFlags, Data: nflog.flags},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	// set timeout
-	cmd, err = netlink.MarshalAttributes([]netlink.Attribute{
-		{Type: nfUlACfgTimeOut, Data: []byte{0x0, 0x0, 0x0, 0x7}},
+	_, err = nflog.setConfig(uint8(unix.AF_UNSPEC), seq, uint16(group), []netlink.Attribute{
+		{Type: nfUlACfgTimeOut, Data: nflog.timeout},
 	})
 	if err != nil {
-		return err
-	}
-	data = putExtraHeader(uint8(unix.AF_UNSPEC), unix.NFNETLINK_V0, htons(uint16(group)))
-	data = append(data, cmd...)
-	req = netlink.Message{
-		Header: netlink.Header{
-			Type:     netlink.HeaderType((nfnlSubSysUlog << 8) | nfUlnlMsgConfig),
-			Flags:    netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge,
-			Sequence: seq,
-		},
-		Data: data,
-	}
-	if _, err := nflog.execute(req); err != nil {
 		return err
 	}
 
 	go func() {
 		defer func() {
 			// unbinding from group
-			cmd, err = netlink.MarshalAttributes([]netlink.Attribute{
+			_, err = nflog.setConfig(uint8(unix.AF_UNSPEC), seq, uint16(group), []netlink.Attribute{
 				{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdUnbind}},
 			})
 			if err != nil {
-				// TODO: handle this error
-				return
-			}
-			data = putExtraHeader(uint8(afFamily), unix.NFNETLINK_V0, 0)
-			data = append(data, cmd...)
-			req = netlink.Message{
-				Header: netlink.Header{
-					Type:  netlink.HeaderType((nfnlSubSysUlog << 8) | nfUlnlMsgConfig),
-					Flags: netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge,
-				},
-				Data: data,
-			}
-			if _, err := nflog.execute(req); err != nil {
 				// TODO: handle this error
 				return
 			}
@@ -279,6 +205,24 @@ func putExtraHeader(familiy, version uint8, resid uint16) []byte {
 	buf := make([]byte, 2)
 	nlenc.PutUint16(buf, resid)
 	return append([]byte{familiy, version}, buf...)
+}
+
+func (nflog *Nflog) setConfig(afFamily uint8, oseq uint32, resid uint16, attrs []netlink.Attribute) (uint32, error) {
+	cmd, err := netlink.MarshalAttributes(attrs)
+	if err != nil {
+		return 0, err
+	}
+	data := putExtraHeader(afFamily, unix.NFNETLINK_V0, htonsU16(resid))
+	data = append(data, cmd...)
+	req := netlink.Message{
+		Header: netlink.Header{
+			Type:     netlink.HeaderType((nfnlSubSysUlog << 8) | nfUlnlMsgConfig),
+			Flags:    netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge,
+			Sequence: oseq,
+		},
+		Data: data,
+	}
+	return nflog.execute(req)
 }
 
 // ErrMsg as defined in nlmsgerr
@@ -329,10 +273,16 @@ func (nflog *Nflog) execute(req netlink.Message) (uint32, error) {
 	return seq, nil
 }
 
-func htons(i uint16) uint16 {
+func htonsU16(i uint16) uint16 {
 	buf := make([]byte, 2)
 	nlenc.PutUint16(buf, i)
 	return binary.BigEndian.Uint16(buf)
+}
+
+func htonsU32(i uint32) []byte {
+	buf := make([]byte, 4)
+	nlenc.PutUint32(buf, i)
+	return buf
 }
 
 func parseMsg(msg netlink.Message) (Msg, error) {

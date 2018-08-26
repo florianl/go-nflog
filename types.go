@@ -10,6 +10,7 @@ const (
 	NfUlnlCopyMeta   byte = 0x01
 	NfUlnlCopyPacket byte = 0x02
 
+	// Flags that can be set on a connection
 	NfUlnlCfgFSeq       uint16 = 0x0001
 	NfUlnlCfgFSeqGlobal uint16 = 0x0002
 	NfUlnlCfgFConntrack uint16 = 0x0004
