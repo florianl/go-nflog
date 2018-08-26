@@ -145,22 +145,28 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 		return err
 	}
 
-	// set flags
-	if nflog.flags[0] != byte(0) {
-		_, err = nflog.setConfig(uint8(unix.AF_UNSPEC), seq, uint16(group), []netlink.Attribute{
-			{Type: nfUlACfgFlags, Data: nflog.flags},
-		})
+	var attrs []netlink.Attribute
+	if nflog.flags[0] != 0 || nflog.flags[1] != 0 {
+		// set flags
+		attrs = append(attrs, netlink.Attribute{Type: nfUlACfgFlags, Data: nflog.flags})
+	}
+
+	if nflog.timeout[0] != 0 || nflog.timeout[1] != 0 || nflog.timeout[2] != 0 || nflog.timeout[3] != 0 {
+		// set timeout
+		attrs = append(attrs, netlink.Attribute{Type: nfUlACfgTimeOut, Data: nflog.timeout})
+
+	}
+
+	if nflog.qthresh[0] != 0 || nflog.qthresh[1] != 1 || nflog.qthresh[2] != 0 || nflog.qthresh[3] != 0 {
+		// set qthresh
+		attrs = append(attrs, netlink.Attribute{Type: nfUlACfgQThresh, Data: nflog.timeout})
+	}
+
+	if len(attrs) != 0 {
+		_, err = nflog.setConfig(uint8(unix.AF_UNSPEC), seq, uint16(group), attrs)
 		if err != nil {
 			return err
 		}
-	}
-
-	// set timeout
-	_, err = nflog.setConfig(uint8(unix.AF_UNSPEC), seq, uint16(group), []netlink.Attribute{
-		{Type: nfUlACfgTimeOut, Data: nflog.timeout},
-	})
-	if err != nil {
-		return err
 	}
 
 	go func() {
