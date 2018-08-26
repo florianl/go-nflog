@@ -51,24 +51,25 @@ const (
 	nfUlnlCfgCmdPfUnbind = 0x4
 )
 
+// Various identifier,that can be the key of Msg map
 const (
-	nfUlaAttrPacketHdr         = 1
-	nfUlaAttrMark              = 2
-	nfUlaAttrTimestamp         = 3
-	nfUlaAttrIfindexIndev      = 4
-	nfUlaAttrIfindexOutdev     = 5
-	nfUlaAttrIfindexPhysIndev  = 6
-	nfUlaAttrIfindexPhysOutdev = 7
-	nfUlaAttrHwaddr            = 8
-	nfUlaAttrPayload           = 9
-	nfUlaAttrPrefix            = 10
-	nfUlaAttrUID               = 11
-	nfUlaAttrSeq               = 12
-	nfUlaAttrSeqGlobal         = 13
-	nfUlaAttrGID               = 14
-	nfUlaAttrHwType            = 15
-	nfUlaAttrHwHeader          = 16
-	nfUlaAttrHwLen             = 17
-	nfUlaAttrCt                = 18
-	nfUlaAttrCtInfo            = 19
+	NfUlaAttrPacketHdr         = 1
+	NfUlaAttrMark              = 2
+	NfUlaAttrTimestamp         = 3
+	NfUlaAttrIfindexIndev      = 4
+	NfUlaAttrIfindexOutdev     = 5
+	NfUlaAttrIfindexPhysIndev  = 6
+	NfUlaAttrIfindexPhysOutdev = 7
+	NfUlaAttrHwaddr            = 8
+	NfUlaAttrPayload           = 9
+	NfUlaAttrPrefix            = 10
+	NfUlaAttrUID               = 11
+	NfUlaAttrSeq               = 12
+	NfUlaAttrSeqGlobal         = 13
+	NfUlaAttrGID               = 14
+	NfUlaAttrHwType            = 15
+	NfUlaAttrHwHeader          = 16
+	NfUlaAttrHwLen             = 17
+	NfUlaAttrCt                = 18
+	NfUlaAttrCtInfo            = 19
 )
