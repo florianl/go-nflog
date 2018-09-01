@@ -1,0 +1,19 @@
+language: go
+
+go:
+    - "1.1x"
+    - master
+
+os:
+  - linux
+
+sudo: false
+
+before_install:
+    - go get github.com/golang/lint/golint
+    - go get -d ./...
+
+script:
+    - go vet ./...
+    - golint -set_exit_status ./...
+    - go test -v ./...
