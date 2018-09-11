@@ -4,7 +4,6 @@ package nflog
 
 import (
 	"context"
-	"encoding/binary"
 	"errors"
 	"fmt"
 
@@ -282,7 +281,7 @@ func (nflog *Nflog) execute(req netlink.Message) (uint32, error) {
 func htonsU16(i uint16) uint16 {
 	buf := make([]byte, 2)
 	nlenc.PutUint16(buf, i)
-	return binary.BigEndian.Uint16(buf)
+	return nlenc.Uint16(buf)
 }
 
 func htonsU32(i uint32) []byte {
