@@ -31,7 +31,7 @@ var (
 // Msg contains all the information of a connection
 type Msg map[int][]byte
 
-// Open a connection to the netfilter subsystem
+// Open a connection to the netfilter log subsystem
 func Open() (*Nflog, error) {
 	var nflog Nflog
 
@@ -49,7 +49,7 @@ func Open() (*Nflog, error) {
 	return &nflog, nil
 }
 
-// Close the connection to the conntrack subsystem
+// Close the connection to the netfilter log subsystem
 func (nflog *Nflog) Close() error {
 	return nflog.Con.Close()
 }
