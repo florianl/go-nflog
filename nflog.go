@@ -4,6 +4,7 @@ package nflog
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 
@@ -206,9 +207,10 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 	return nil
 }
 
+// /include/uapi/linux/netfilter/nfnetlink.h:struct nfgenmsg{} res_id is Big Endian
 func putExtraHeader(familiy, version uint8, resid uint16) []byte {
 	buf := make([]byte, 2)
-	nlenc.PutUint16(buf, resid)
+	binary.BigEndian.PutUint16(buf, resid)
 	return append([]byte{familiy, version}, buf...)
 }
 
@@ -217,7 +219,7 @@ func (nflog *Nflog) setConfig(afFamily uint8, oseq uint32, resid uint16, attrs [
 	if err != nil {
 		return 0, err
 	}
-	data := putExtraHeader(afFamily, unix.NFNETLINK_V0, htonsU16(resid))
+	data := putExtraHeader(afFamily, unix.NFNETLINK_V0, resid)
 	data = append(data, cmd...)
 	req := netlink.Message{
 		Header: netlink.Header{
@@ -276,12 +278,6 @@ func (nflog *Nflog) execute(req netlink.Message) (uint32, error) {
 	}
 
 	return seq, nil
-}
-
-func htonsU16(i uint16) uint16 {
-	buf := make([]byte, 2)
-	nlenc.PutUint16(buf, i)
-	return nlenc.Uint16(buf)
 }
 
 func htonsU32(i uint32) []byte {
