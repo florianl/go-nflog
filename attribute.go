@@ -15,6 +15,9 @@ func extractAttribute(m Msg, data []byte) error {
 	}
 
 	for _, attr := range attributes {
+		if int(attr.Type) >= attrMax || int(attr.Type) == attrUnspec {
+			return ErrUnknownAttribute
+		}
 		m[int(attr.Type)] = attr.Data
 	}
 	return nil

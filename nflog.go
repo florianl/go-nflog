@@ -5,7 +5,6 @@ package nflog
 import (
 	"context"
 	"encoding/binary"
-	"errors"
 	"fmt"
 
 	"github.com/mdlayher/netlink"
@@ -23,11 +22,6 @@ type Nflog struct {
 	qthresh []byte //uint32
 	timeout []byte //uint32
 }
-
-// Various errors
-var (
-	ErrUnknownFlag = errors.New("Can not set flag")
-)
 
 // Msg contains all the information of a connection
 type Msg map[int][]byte
@@ -63,7 +57,8 @@ func (nflog *Nflog) SetQThresh(qthresh uint32) error {
 
 // SetNlBufSize set the buffer size for this netlink connection
 func (nflog *Nflog) SetNlBufSize(size uint32) error {
-	nflog.bufsize = htonsU32(size)
+	// copy_range in nfulnl_msg_config_mode is __be32
+	binary.BigEndian.PutUint32(nflog.bufsize, size)
 	return nil
 }
 
@@ -271,10 +266,13 @@ func (nflog *Nflog) execute(req netlink.Message) (uint32, error) {
 		if err != nil {
 			return 0, err
 		}
-		seq = msg.Header.Sequence
 		if errMsg.Code != 0 {
 			return 0, fmt.Errorf("%#v", errMsg)
 		}
+		if seq != 0 {
+			return 0, fmt.Errorf("Received more than one message from the kernel")
+		}
+		seq = msg.Header.Sequence
 	}
 
 	return seq, nil

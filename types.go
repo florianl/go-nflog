@@ -18,8 +18,10 @@ const (
 
 // Various errors
 var (
-	ErrAfFamily = errors.New("Unsupported AF_Family type")
-	ErrCopyMode = errors.New("Unsupported copy mode")
+	ErrAfFamily         = errors.New("Unsupported AF_Family type")
+	ErrCopyMode         = errors.New("Unsupported copy mode")
+	ErrUnknownFlag      = errors.New("Unsupported flag")
+	ErrUnknownAttribute = errors.New("Received unsupported attribute")
 )
 
 // nfLogSubSysUlog the netlink subsystem we will query
@@ -53,23 +55,27 @@ const (
 
 // Various identifier,that can be the key of Msg map
 const (
-	NfUlaAttrPacketHdr         = 1
-	NfUlaAttrMark              = 2
-	NfUlaAttrTimestamp         = 3
-	NfUlaAttrIfindexIndev      = 4
-	NfUlaAttrIfindexOutdev     = 5
-	NfUlaAttrIfindexPhysIndev  = 6
-	NfUlaAttrIfindexPhysOutdev = 7
-	NfUlaAttrHwaddr            = 8
-	NfUlaAttrPayload           = 9
-	NfUlaAttrPrefix            = 10
-	NfUlaAttrUID               = 11
-	NfUlaAttrSeq               = 12
-	NfUlaAttrSeqGlobal         = 13
-	NfUlaAttrGID               = 14
-	NfUlaAttrHwType            = 15
-	NfUlaAttrHwHeader          = 16
-	NfUlaAttrHwLen             = 17
-	NfUlaAttrCt                = 18
-	NfUlaAttrCtInfo            = 19
+	attrUnspec                 = iota
+	NfUlaAttrPacketHdr         = iota
+	NfUlaAttrMark              = iota
+	NfUlaAttrTimestamp         = iota
+	NfUlaAttrIfindexIndev      = iota
+	NfUlaAttrIfindexOutdev     = iota
+	NfUlaAttrIfindexPhysIndev  = iota
+	NfUlaAttrIfindexPhysOutdev = iota
+	NfUlaAttrHwaddr            = iota
+	NfUlaAttrPayload           = iota
+	NfUlaAttrPrefix            = iota
+	NfUlaAttrUID               = iota
+	NfUlaAttrSeq               = iota
+	NfUlaAttrSeqGlobal         = iota
+	NfUlaAttrGID               = iota
+	NfUlaAttrHwType            = iota
+	NfUlaAttrHwHeader          = iota
+	NfUlaAttrHwLen             = iota
+	NfUlaAttrCt                = iota
+	NfUlaAttrCtInfo            = iota
+
+	attrMax = iota /* This is for internal use only	*/
+
 )
