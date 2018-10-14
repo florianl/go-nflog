@@ -1,5 +1,3 @@
-//+build linux
-
 package nflog
 
 import "errors"
@@ -22,6 +20,7 @@ var (
 	ErrCopyMode         = errors.New("Unsupported copy mode")
 	ErrUnknownFlag      = errors.New("Unsupported flag")
 	ErrUnknownAttribute = errors.New("Received unsupported attribute")
+	ErrNoTimestamp      = errors.New("Timestamp was not set")
 )
 
 // nfLogSubSysUlog the netlink subsystem we will query
