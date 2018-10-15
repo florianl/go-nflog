@@ -262,13 +262,6 @@ func (nflog *Nflog) execute(req netlink.Message) (uint32, error) {
 		return 0, e
 	}
 	for _, msg := range reply {
-		errMsg, err := unmarschalErrMsg(msg.Data)
-		if err != nil {
-			return 0, err
-		}
-		if errMsg.Code != 0 {
-			return 0, fmt.Errorf("%#v", errMsg)
-		}
 		if seq != 0 {
 			return 0, fmt.Errorf("Received more than one message from the kernel")
 		}
