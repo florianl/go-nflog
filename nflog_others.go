@@ -21,14 +21,14 @@ func Open() (*Nflog, error) {
 }
 
 // Close is not implemented for OS other than Linux
-func (nflog *Nflog) Close() error {
+func (_ *Nflog) Close() error {
 	return errNotLinux
 }
 
 // HookFunc is a function, that receives events from a Netlinkgroup
-type HookFunc func(m Msg) int
+type HookFunc func(_ Msg) int
 
 // Register is not implemented for OS other than Linux
-func (nflog *Nflog) Register(_ context.Context, _, _ int, _ byte, _ HookFunc) error {
+func (_ *Nflog) Register(_ context.Context, _, _ int, _ byte, _ HookFunc) error {
 	return errNotLinux
 }
