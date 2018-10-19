@@ -2,16 +2,17 @@ package nflog
 
 import "errors"
 
-// Various Copy modes
+// Various constants
 const (
+	// Available copy modes
 	NfUlnlCopyNone   byte = 0x00
 	NfUlnlCopyMeta   byte = 0x01
-	NfUlnlCopyPacket byte = 0x02
+	NfUlnlCopyPacket byte = 0x02 // Provides a complete copy of the packet in the Msg map
 
 	// Flags that can be set on a connection
 	NfUlnlCfgFSeq       uint16 = 0x0001
 	NfUlnlCfgFSeqGlobal uint16 = 0x0002
-	NfUlnlCfgFConntrack uint16 = 0x0004
+	NfUlnlCfgFConntrack uint16 = 0x0004 // Requires Linux Kernel v4.4 or newer
 )
 
 // Various errors
@@ -53,6 +54,7 @@ const (
 )
 
 // Various identifier,that can be the key of Msg map
+// A Msg map don't need to contain all of these keys.
 const (
 	attrUnspec                 = iota
 	NfUlaAttrPacketHdr         = iota
