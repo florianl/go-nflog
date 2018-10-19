@@ -10,7 +10,7 @@ os:
 sudo: false
 
 before_install:
-    - go get github.com/golang/lint/golint
+    - go get golang.org/x/lint/golint
     - go get -d ./...
 
 script:
