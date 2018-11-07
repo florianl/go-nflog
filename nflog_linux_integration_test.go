@@ -25,7 +25,8 @@ func TestLinuxNflog(t *testing.T) {
 	fn := func(m Msg) int {
 		// Just print out the payload of the nflog packet
 		fmt.Printf("%v\n", m[NfUlaAttrPayload])
-		return 0
+		// Return after a sucessfull received packet
+		return 1
 	}
 
 	// Register your function to listen on nflog group 100
