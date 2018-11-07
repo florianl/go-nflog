@@ -17,7 +17,7 @@ type Nflog struct {
 	// Con is the pure representation of a netlink socket
 	Con *netlink.Conn
 
-	flags   []byte // uint16
+	flags   []byte //uint16
 	bufsize []byte //uint32
 	qthresh []byte //uint32
 	timeout []byte //uint32
