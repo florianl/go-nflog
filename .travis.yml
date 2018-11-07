@@ -24,8 +24,6 @@ script:
     - golint -set_exit_status ./...
     - go test -v -race ./...
     - go test -c -tags integration .
-    - ping6 -c 42 -i 2 2606:4700:4700::1111 &
-    - ping -c 42 -i 2 1.1.1.1 &
+    - ping6 -c 3 -i 2 2606:4700:4700::1111 &
+    - ping -c 3 -i 2 1.1.1.1 &
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo ./go-nflog.test -test.v ; fi
-    - killall -9 ping
-    - killall -9 ping6
