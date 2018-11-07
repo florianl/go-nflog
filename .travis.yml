@@ -16,7 +16,7 @@ install:
     - go get -d ./...
 
 before_script:
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo iptables -I OUTPUT -p icmp -j NFLOG --nflog-group 100 ; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo ip6tables -I OUTPUT -p ipv6-icmp -j NFLOG --nflog-group 100 ; fi
 
 script:
     - go vet ./...
