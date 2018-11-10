@@ -30,7 +30,6 @@ script:
     - |
         ping -c 10 -i 2 1.1.1.1 &
         export PING4_PID=$!
-    - echo $PING6_PID $PING4_PID
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo ./go-nflog.test -test.v ; fi
-    - kill -9 $PING4_PID
-    - kill -9 $PING6_PID
+    - if [[ $(ps cax | grep $PING4_PID) ]]; then kill -9 $PING4_PID ; fi
+    - if [[ $(ps cax | grep $PING6_PID) ]]; then kill -9 $PING6_PID ; fi
