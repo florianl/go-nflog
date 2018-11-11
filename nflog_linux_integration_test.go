@@ -25,8 +25,7 @@ func TestLinuxNflog(t *testing.T) {
 	fn := func(m Msg) int {
 		// Just print out the payload of the nflog packet
 		fmt.Printf("%v\n", m[NfUlaAttrPayload])
-		// Return after a sucessfull received packet
-		return 1
+		return 0
 	}
 
 	// Register your function to listen on nflog group 100
@@ -35,8 +34,6 @@ func TestLinuxNflog(t *testing.T) {
 		t.Fatalf("failed to register hook function: %v", err)
 	}
 
-	select {
 	// Block till the context expires
-	case <-ctx.Done():
-	}
+	<-ctx.Done()
 }
