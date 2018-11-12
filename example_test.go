@@ -15,7 +15,7 @@ func ExampleNflog_Register() {
 	// Send outgoing pings to nflog group 100
 	// # sudo iptables -I OUTPUT -p icmp -j NFLOG --nflog-group 100
 
-	nf, err := nflog.Open()
+	nf, err := nflog.Open(nil)
 	if err != nil {
 		fmt.Println("could not open nflog socket:", err)
 		return
@@ -41,8 +41,6 @@ func ExampleNflog_Register() {
 		return
 	}
 
-	select {
 	// Block till the context expires
-	case <-ctx.Done():
-	}
+	<-ctx.Done()
 }

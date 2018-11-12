@@ -5,6 +5,7 @@ package nflog
 import (
 	"bytes"
 	"encoding/binary"
+	"log"
 	"time"
 
 	"github.com/mdlayher/netlink"
@@ -35,16 +36,16 @@ func (m *Msg) Timestamp() (time.Time, error) {
 	return time.Unix(sec, usec*1000), nil
 }
 
-func extractAttribute(m Msg, data []byte) error {
+func extractAttribute(m Msg, logger *log.Logger, data []byte) error {
 	attributes, err := netlink.UnmarshalAttributes(data)
-
 	if err != nil {
 		return err
 	}
 
 	for _, attr := range attributes {
 		if int(attr.Type) >= attrMax || int(attr.Type) == attrUnspec {
-			return ErrUnknownAttribute
+			logger.Fatalf("extractAttribute(): %d %d %v\n", attr.Type, attr.Length, attr.Data)
+			continue
 		}
 		m[int(attr.Type)] = attr.Data
 	}
@@ -58,11 +59,11 @@ func checkHeader(data []byte) int {
 	return 0
 }
 
-func extractAttributes(msg []byte) (Msg, error) {
+func extractAttributes(logger *log.Logger, msg []byte) (Msg, error) {
 	var data = make(map[int][]byte)
 
 	offset := checkHeader(msg[:2])
-	if err := extractAttribute(data, msg[offset:]); err != nil {
+	if err := extractAttribute(data, logger, msg[offset:]); err != nil {
 		return nil, err
 	}
 	return data, nil

@@ -17,11 +17,10 @@ const (
 
 // Various errors
 var (
-	ErrAfFamily         = errors.New("Unsupported AF_Family type")
-	ErrCopyMode         = errors.New("Unsupported copy mode")
-	ErrUnknownFlag      = errors.New("Unsupported flag")
-	ErrUnknownAttribute = errors.New("Received unsupported attribute")
-	ErrNoTimestamp      = errors.New("Timestamp was not set")
+	ErrAfFamily    = errors.New("Unsupported AF_Family type")
+	ErrCopyMode    = errors.New("Unsupported copy mode")
+	ErrUnknownFlag = errors.New("Unsupported flag")
+	ErrNoTimestamp = errors.New("Timestamp was not set")
 )
 
 // nfLogSubSysUlog the netlink subsystem we will query

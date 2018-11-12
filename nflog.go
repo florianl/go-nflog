@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"log"
 
 	"github.com/mdlayher/netlink"
 	"github.com/mdlayher/netlink/nlenc"
@@ -17,24 +18,49 @@ type Nflog struct {
 	// Con is the pure representation of a netlink socket
 	Con *netlink.Conn
 
+	logger *log.Logger
+
 	flags   []byte //uint16
 	bufsize []byte //uint32
 	qthresh []byte //uint32
 	timeout []byte //uint32
 }
 
+// Config contains options for a Conn.
+type Config struct {
+	// Interface to log internals.
+	Logger *log.Logger
+}
+
 // Msg contains all the information of a connection
 type Msg map[int][]byte
 
+// devNull satisfies io.Writer, in case *log.Logger is not provided
+type devNull struct{}
+
+func (devNull) Write(p []byte) (int, error) {
+	return 0, nil
+}
+
 // Open a connection to the netfilter log subsystem
-func Open() (*Nflog, error) {
+func Open(config *Config) (*Nflog, error) {
 	var nflog Nflog
+
+	if config == nil {
+		config = &Config{}
+	}
 
 	con, err := netlink.Dial(unix.NETLINK_NETFILTER, nil)
 	if err != nil {
 		return nil, err
 	}
 	nflog.Con = con
+
+	if config.Logger == nil {
+		nflog.logger = log.New(new(devNull), "", 0)
+	} else {
+		nflog.logger = config.Logger
+	}
 
 	nflog.flags = make([]byte, 2)
 	nflog.timeout = make([]byte, 4)
@@ -171,7 +197,7 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 				{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdUnbind}},
 			})
 			if err != nil {
-				// TODO: handle this error
+				nflog.logger.Fatalf("Could not unbind socket from configuration: %v", err)
 				return
 			}
 		}()
@@ -187,9 +213,9 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 					// continue to receive messages
 					break
 				}
-				m, err := parseMsg(msg)
+				m, err := parseMsg(nflog.logger, msg)
 				if err != nil {
-					fmt.Println(err)
+					nflog.logger.Fatalf("Could not parse message: %v", err)
 					return
 				}
 				if ret := fn(m); ret != 0 {
@@ -253,6 +279,8 @@ func unmarschalErrMsg(b []byte) (ErrMsg, error) {
 func (nflog *Nflog) execute(req netlink.Message) (uint32, error) {
 	var seq uint32
 
+	nflog.logger.Printf("execute(): %v\n", req)
+
 	reply, e := nflog.Con.Execute(req)
 	if e != nil {
 		return 0, e
@@ -277,7 +305,7 @@ func htonsU32(i uint32) []byte {
 	return buf
 }
 
-func parseMsg(msg netlink.Message) (Msg, error) {
+func parseMsg(logger *log.Logger, msg netlink.Message) (Msg, error) {
 	if msg.Header.Type&netlink.HeaderTypeError == netlink.HeaderTypeError {
 		errMsg, err := unmarschalErrMsg(msg.Data)
 		if err != nil {
@@ -285,7 +313,7 @@ func parseMsg(msg netlink.Message) (Msg, error) {
 		}
 		return nil, fmt.Errorf("%#v", errMsg)
 	}
-	m, err := extractAttributes(msg.Data)
+	m, err := extractAttributes(logger, msg.Data)
 	if err != nil {
 		return nil, err
 	}
