@@ -37,10 +37,8 @@ func main() {
 		return
 	}
 
-	select {
 	// Block till the context expires
-	case <-ctx.Done():
-	}
+	<-ctx.Done()
 }
 ```
 
