@@ -13,7 +13,7 @@ import (
 
 func TestLinuxNflog(t *testing.T) {
 	// Open a socket to the netfilter log subsystem
-	nf, err := Open()
+	nf, err := Open(nil)
 	if err != nil {
 		t.Fatalf("failed to open nflog socket: %v", err)
 	}
