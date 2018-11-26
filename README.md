@@ -11,22 +11,17 @@ func main() {
 	// Send outgoing pings to nflog group 100
 	// # sudo iptables -I OUTPUT -p icmp -j NFLOG --nflog-group 100
 
-	nf, err := nflog.Open()
+	nf, err := nflog.Open(nil)
 	if err != nil {
 		fmt.Println("could not open nflog socket:", err)
 		return
 	}
 	defer nf.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 
 	fn := func(m nflog.Msg) int {
-		ts, err := m.Timestamp()
-		if err != nflog.ErrNoTimestamp {
-			ts = time.Now()
-		}
-		fmt.Printf("%s\t%v\n", ts, m[nflog.NfUlaAttrPayload])
+		fmt.Printf("%v\n", m[nflog.NfUlaAttrPayload])
 		return 0
 	}
 
