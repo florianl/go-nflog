@@ -26,11 +26,7 @@ func ExampleNflog_Register() {
 	defer cancel()
 
 	fn := func(m nflog.Msg) int {
-		ts, err := m.Timestamp()
-		if err != nflog.ErrNoTimestamp {
-			ts = time.Now()
-		}
-		fmt.Printf("%s\t%v\n", ts, m[nflog.NfUlaAttrPayload])
+		fmt.Printf("%v\n", m[nflog.AttrPayload])
 		return 0
 	}
 
