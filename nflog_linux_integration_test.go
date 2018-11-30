@@ -24,7 +24,7 @@ func TestLinuxNflog(t *testing.T) {
 
 	fn := func(m Msg) int {
 		// Just print out the payload of the nflog packet
-		fmt.Printf("%v\n", m[NfUlaAttrPayload])
+		fmt.Printf("%v\n", m[AttrPayload])
 		return 0
 	}
 
