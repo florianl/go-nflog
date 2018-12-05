@@ -4,23 +4,24 @@ import "errors"
 
 // Various constants
 const (
-	// Available copy modes
-	NfUlnlCopyNone   byte = 0x00
-	NfUlnlCopyMeta   byte = 0x01
-	NfUlnlCopyPacket byte = 0x02 // Provides a complete copy of the packet in the Msg map
+	// Available copy modes for Config.Copymode.
+	NfUlnlCopyNone byte = 0x00
+	NfUlnlCopyMeta byte = 0x01
+	// Provides a complete copy of the packet in the Msg map.
+	// But can be limited by setting Config.Bufsize.
+	NfUlnlCopyPacket byte = 0x02
 
 	// Flags that can be set on a connection
 	NfUlnlCfgFSeq       uint16 = 0x0001
 	NfUlnlCfgFSeqGlobal uint16 = 0x0002
-	NfUlnlCfgFConntrack uint16 = 0x0004 // Requires Linux Kernel v4.4 or newer
+	// Requires Kernel configuration of CONFIG_NETFILTER_NETLINK_GLUE_CT
+	NfUlnlCfgFConntrack uint16 = 0x0004
 )
 
 // Various errors
 var (
-	ErrAfFamily    = errors.New("Unsupported AF_Family type")
 	ErrCopyMode    = errors.New("Unsupported copy mode")
 	ErrUnknownFlag = errors.New("Unsupported flag")
-	ErrNoTimestamp = errors.New("Timestamp was not set")
 )
 
 // nfLogSubSysUlog the netlink subsystem we will query
