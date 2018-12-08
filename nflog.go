@@ -20,20 +20,48 @@ type Nflog struct {
 
 	logger *log.Logger
 
-	flags   []byte //uint16
-	bufsize []byte //uint32
-	qthresh []byte //uint32
-	timeout []byte //uint32
+	flags    []byte //uint16
+	bufsize  []byte //uint32
+	qthresh  []byte //uint32
+	timeout  []byte //uint32
+	group    uint16
+	copyMode uint8
 }
 
 // Config contains options for a Conn.
 type Config struct {
+	// Network namespace the Nflog needs to operate in. If set to 0 (default),
+	// no network namespace will be entered.
+	NetNS int
+
+	// Optional flags
+	Flags uint16
+
+	// Specifies the number of packets in the group,
+	// until they will be pushed to userspace.
+	QThresh uint32
+
+	// Maximum time in 1/100s that a packet in the nflog group will be queued,
+	// until it is pushed to userspace.
+	Timeout uint32
+
+	// Nflog group this socket will be assigned to.
+	Group uint16
+
+	// Specifies how the kernel handles a packet in the nflog group.
+	Copymode uint8
+
+	// If NfUlnlCopyPacket is set as CopyMode,
+	// this parameter specifies the maximum number of bytes,
+	// that will be copied to userspace.
+	Bufsize uint32
+
 	// Interface to log internals.
 	Logger *log.Logger
 }
 
 // Msg contains all the information of a connection
-type Msg map[int][]byte
+type Msg map[int]interface{}
 
 // devNull satisfies io.Writer, in case *log.Logger is not provided
 type devNull struct{}
@@ -50,7 +78,15 @@ func Open(config *Config) (*Nflog, error) {
 		config = &Config{}
 	}
 
-	con, err := netlink.Dial(unix.NETLINK_NETFILTER, nil)
+	if err := checkFlags(config.Flags); err != nil {
+		return nil, err
+	}
+
+	if config.Copymode != NfUlnlCopyNone && config.Copymode != NfUlnlCopyMeta && config.Copymode != NfUlnlCopyPacket {
+		return nil, ErrCopyMode
+	}
+
+	con, err := netlink.Dial(unix.NETLINK_NETFILTER, &netlink.Config{NetNS: config.NetNS})
 	if err != nil {
 		return nil, err
 	}
@@ -62,12 +98,25 @@ func Open(config *Config) (*Nflog, error) {
 		nflog.logger = config.Logger
 	}
 
-	nflog.flags = make([]byte, 2)
-	nflog.timeout = make([]byte, 4)
-	nflog.bufsize = make([]byte, 4)
-	nflog.qthresh = make([]byte, 4)
+	nflog.flags = []byte{0x00, 0x00}
+	binary.BigEndian.PutUint16(nflog.flags, config.Flags)
+	nflog.timeout = []byte{0x00, 0x00, 0x00, 0x00}
+	binary.BigEndian.PutUint32(nflog.timeout, config.Timeout)
+	nflog.bufsize = []byte{0x00, 0x00, 0x00, 0x00}
+	binary.BigEndian.PutUint32(nflog.bufsize, config.Bufsize)
+	nflog.qthresh = []byte{0x00, 0x00, 0x00, 0x00}
+	binary.BigEndian.PutUint32(nflog.qthresh, config.QThresh)
+	nflog.group = config.Group
+	nflog.copyMode = config.Copymode
 
 	return &nflog, nil
+}
+
+func checkFlags(flags uint16) error {
+	if flags > NfUlnlCfgFConntrack {
+		return ErrUnknownFlag
+	}
+	return nil
 }
 
 // Close the connection to the netfilter log subsystem
@@ -75,57 +124,15 @@ func (nflog *Nflog) Close() error {
 	return nflog.Con.Close()
 }
 
-// SetQThresh sets the queue thresh for this connection
-func (nflog *Nflog) SetQThresh(qthresh uint32) error {
-	nflog.qthresh = htonsU32(qthresh)
-	return nil
-}
-
-// SetNlBufSize set the buffer size for this netlink connection
-func (nflog *Nflog) SetNlBufSize(size uint32) error {
-	// copy_range in nfulnl_msg_config_mode is __be32
-	binary.BigEndian.PutUint32(nflog.bufsize, size)
-	return nil
-}
-
-// SetTimeout in 1/100 s for this connection
-func (nflog *Nflog) SetTimeout(timeout uint32) error {
-	nflog.timeout = htonsU32(timeout)
-	return nil
-}
-
-// SetFlag sets a specified flags on this connection
-func (nflog *Nflog) SetFlag(flag uint16) error {
-	if flag != NfUlnlCfgFSeq && flag != NfUlnlCfgFSeqGlobal && flag != NfUlnlCfgFConntrack {
-		return ErrUnknownFlag
-	}
-	nflog.flags[0] |= byte(flag)
-	return nil
-}
-
-// RemoveAllFlags deletes all flags, that were set on this connection
-func (nflog *Nflog) RemoveAllFlags() error {
-	nflog.flags = []byte{0x0, 0x0}
-	return nil
-}
-
 // HookFunc is a function, that receives events from a Netlinkgroup
 // To stop receiving messages on this HookFunc, return something different than 0
 type HookFunc func(m Msg) int
 
 // Register your own function as callback for a netfilter log group
-func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode byte, fn HookFunc) error {
-
-	if afFamily != unix.AF_INET6 && afFamily != unix.AF_INET {
-		return ErrAfFamily
-	}
-
-	if copyMode != NfUlnlCopyNone && copyMode != NfUlnlCopyMeta && copyMode != NfUlnlCopyPacket {
-		return ErrCopyMode
-	}
+func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 
 	// unbinding existing handler (if any)
-	seq, err := nflog.setConfig(uint8(afFamily), 0, 0, []netlink.Attribute{
+	seq, err := nflog.setConfig(unix.AF_UNSPEC, 0, 0, []netlink.Attribute{
 		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdPfUnbind}},
 	})
 	if err != nil {
@@ -133,7 +140,7 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 	}
 
 	// binding to family
-	_, err = nflog.setConfig(uint8(afFamily), seq, 0, []netlink.Attribute{
+	_, err = nflog.setConfig(unix.AF_UNSPEC, seq, 0, []netlink.Attribute{
 		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdPfBind}},
 	})
 	if err != nil {
@@ -141,7 +148,7 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 	}
 
 	// binding to generic group
-	_, err = nflog.setConfig(uint8(unix.AF_UNSPEC), seq, 0, []netlink.Attribute{
+	_, err = nflog.setConfig(unix.AF_UNSPEC, seq, 0, []netlink.Attribute{
 		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdBind}},
 	})
 	if err != nil {
@@ -149,7 +156,7 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 	}
 
 	// binding to the requested group
-	_, err = nflog.setConfig(uint8(unix.AF_UNSPEC), seq, uint16(group), []netlink.Attribute{
+	_, err = nflog.setConfig(unix.AF_UNSPEC, seq, nflog.group, []netlink.Attribute{
 		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdBind}},
 	})
 	if err != nil {
@@ -157,9 +164,9 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 	}
 
 	// set copy mode and buffer size
-	data := append(nflog.bufsize, copyMode)
+	data := append(nflog.bufsize, nflog.copyMode)
 	data = append(data, 0x0)
-	_, err = nflog.setConfig(uint8(unix.AF_UNSPEC), seq, uint16(group), []netlink.Attribute{
+	_, err = nflog.setConfig(unix.AF_UNSPEC, seq, nflog.group, []netlink.Attribute{
 		{Type: nfUlACfgMode, Data: data},
 	})
 	if err != nil {
@@ -184,27 +191,27 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 	}
 
 	if len(attrs) != 0 {
-		_, err = nflog.setConfig(uint8(unix.AF_UNSPEC), seq, uint16(group), attrs)
+		_, err = nflog.setConfig(unix.AF_UNSPEC, seq, nflog.group, attrs)
 		if err != nil {
 			return err
 		}
 	}
-
 	go func() {
 		defer func() {
 			// unbinding from group
-			_, err = nflog.setConfig(uint8(unix.AF_UNSPEC), seq, uint16(group), []netlink.Attribute{
+			_, err = nflog.setConfig(unix.AF_UNSPEC, seq, nflog.group, []netlink.Attribute{
 				{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdUnbind}},
 			})
 			if err != nil {
-				nflog.logger.Fatalf("Could not unbind socket from configuration: %v", err)
+				nflog.logger.Printf("Could not unbind socket from configuration: %v", err)
 				return
 			}
 		}()
 		for {
 			reply, err := nflog.Con.Receive()
 			if err != nil {
-				return
+				nflog.logger.Printf("Could not receive message: %v", err)
+				continue
 			}
 
 			for _, msg := range reply {
@@ -215,12 +222,17 @@ func (nflog *Nflog) Register(ctx context.Context, afFamily, group int, copyMode 
 				}
 				m, err := parseMsg(nflog.logger, msg)
 				if err != nil {
-					nflog.logger.Fatalf("Could not parse message: %v", err)
-					return
+					nflog.logger.Printf("Could not parse message: %v", err)
+					continue
 				}
 				if ret := fn(m); ret != 0 {
 					return
 				}
+			}
+			select {
+			case <-ctx.Done():
+				return
+			default:
 			}
 		}
 	}()
@@ -278,8 +290,6 @@ func unmarschalErrMsg(b []byte) (ErrMsg, error) {
 
 func (nflog *Nflog) execute(req netlink.Message) (uint32, error) {
 	var seq uint32
-
-	nflog.logger.Printf("execute(): %v\n", req)
 
 	reply, e := nflog.Con.Execute(req)
 	if e != nil {

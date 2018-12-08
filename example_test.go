@@ -8,14 +8,19 @@ import (
 	"time"
 
 	"github.com/florianl/go-nflog"
-	"golang.org/x/sys/unix"
 )
 
 func ExampleNflog_Register() {
 	// Send outgoing pings to nflog group 100
 	// # sudo iptables -I OUTPUT -p icmp -j NFLOG --nflog-group 100
 
-	nf, err := nflog.Open(nil)
+	//Set configuration parameters
+	config := nflog.Config{
+		Group:    100,
+		Copymode: nflog.NfUlnlCopyPacket,
+	}
+
+	nf, err := nflog.Open(&config)
 	if err != nil {
 		fmt.Println("could not open nflog socket:", err)
 		return
@@ -31,7 +36,7 @@ func ExampleNflog_Register() {
 	}
 
 	// Register your function to listen on nflog group 100
-	err = nf.Register(ctx, unix.AF_INET, 100, nflog.NfUlnlCopyPacket, fn)
+	err = nf.Register(ctx, fn)
 	if err != nil {
 		fmt.Println(err)
 		return

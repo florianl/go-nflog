@@ -7,13 +7,16 @@ import (
 	"fmt"
 	"testing"
 	"time"
-
-	"golang.org/x/sys/unix"
 )
 
 func TestLinuxNflog(t *testing.T) {
+	//Set configuration parameters
+	config := Config{
+		Group:    100,
+		Copymode: NfUlnlCopyPacket,
+	}
 	// Open a socket to the netfilter log subsystem
-	nf, err := Open(nil)
+	nf, err := Open(&config)
 	if err != nil {
 		t.Fatalf("failed to open nflog socket: %v", err)
 	}
@@ -29,7 +32,7 @@ func TestLinuxNflog(t *testing.T) {
 	}
 
 	// Register your function to listen on nflog group 100
-	err = nf.Register(ctx, unix.AF_INET, 100, NfUlnlCopyPacket, fn)
+	err = nf.Register(ctx, fn)
 	if err != nil {
 		t.Fatalf("failed to register hook function: %v", err)
 	}

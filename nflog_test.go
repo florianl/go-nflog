@@ -3,29 +3,29 @@
 package nflog
 
 import (
-	"context"
 	"testing"
-
-	"golang.org/x/sys/unix"
 )
 
-func TestRegister(t *testing.T) {
+func TestOpen(t *testing.T) {
 	tests := []struct {
 		name     string
-		family   int
-		group    int
-		copyMode byte
-		fn       HookFunc
+		group    uint16
+		copymode uint8
 		err      error
+		flags    uint16
 	}{
-		{name: "InvalidFamily", family: 3, fn: func(m Msg) int { return 0 }, err: ErrAfFamily},
-		{name: "InvalidCopymode", family: unix.AF_INET6, copyMode: byte(0x5), fn: func(m Msg) int { return 0 }, err: ErrCopyMode},
+		{name: "InvalidCopymode", copymode: 0x5, err: ErrCopyMode},
+		{name: "InvalidFlags", flags: 0x5, err: ErrUnknownFlag},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			nflog := &Nflog{}
-			err := nflog.Register(context.Background(), tc.family, tc.group, tc.copyMode, tc.fn)
+			config := Config{
+				Copymode: tc.copymode,
+				Group:    tc.group,
+				Flags:    tc.flags,
+			}
+			_, err := Open(&config)
 			if err != tc.err {
 				t.Fatalf("Unexpected error - want: %v\tgot: %v\n", tc.err, err)
 			}
