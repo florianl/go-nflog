@@ -46,7 +46,7 @@ type Config struct {
 }
 
 // Msg contains all the information of a connection
-type Msg map[int][]byte
+type Msg map[int]interface{}
 
 // Open is not implemented for OS other than Linux
 func Open(_ *Config) (*Nflog, error) {
