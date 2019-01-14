@@ -74,10 +74,7 @@ func extractAttribute(m Msg, logger *log.Logger, data []byte) error {
 		}
 	}
 
-	if err := ad.Err(); err != nil {
-		return err
-	}
-	return nil
+	return ad.Err()
 }
 
 func checkHeader(data []byte) int {
