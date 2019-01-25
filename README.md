@@ -43,5 +43,13 @@ func main() {
 }
 ```
 
+Privileges
+----------
+
+This package processes information directly from the kernel and therefore it requires special privileges. You
+can provide this privileges by adjusting the `CAP_NET_ADMIN` capabilities.
+```
+	setcap 'cap_net_admin=+ep' /your/executable
+```
 
 For documentation and more examples please take a look at [![GoDoc](https://godoc.org/github.com/florianl/go-nflog?status.svg)](https://godoc.org/github.com/florianl/go-nflog)
