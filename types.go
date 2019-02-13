@@ -21,6 +21,11 @@ const (
 	NfUlnlCfgFConntrack uint16 = 0x0004
 )
 
+// Various optional settings
+const (
+	GenericGroup uint16 = 0x1
+)
+
 // Various errors
 var (
 	ErrCopyMode    = errors.New("Unsupported copy mode")
@@ -112,7 +117,7 @@ type Config struct {
 	// no network namespace will be entered.
 	NetNS int
 
-	// Optional flags
+	// Optional flags for the nflog communication
 	Flags uint16
 
 	// Specifies the number of packets in the group,
@@ -133,6 +138,9 @@ type Config struct {
 	// this parameter specifies the maximum number of bytes,
 	// that will be copied to userspace.
 	Bufsize uint32
+
+	// Optional settings to enable/disable features
+	Settings uint16
 
 	// Interface to log internals.
 	Logger *log.Logger

@@ -26,6 +26,7 @@ type Nflog struct {
 	timeout  []byte //uint32
 	group    uint16
 	copyMode uint8
+	settings uint16
 }
 
 // devNull satisfies io.Writer, in case *log.Logger is not provided
@@ -73,6 +74,7 @@ func Open(config *Config) (*Nflog, error) {
 	binary.BigEndian.PutUint32(nflog.qthresh, config.QThresh)
 	nflog.group = config.Group
 	nflog.copyMode = config.Copymode
+	nflog.settings = config.Settings
 
 	return &nflog, nil
 }
@@ -112,12 +114,14 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 		return err
 	}
 
-	// binding to generic group
-	_, err = nflog.setConfig(unix.AF_UNSPEC, seq, 0, []netlink.Attribute{
-		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdBind}},
-	})
-	if err != nil {
-		return err
+	if (nflog.settings & GenericGroup) == GenericGroup {
+		// binding to generic group
+		_, err = nflog.setConfig(unix.AF_UNSPEC, seq, 0, []netlink.Attribute{
+			{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdPfBind}},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	// binding to the requested group
