@@ -8,8 +8,6 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	nflog "github.com/florianl/go-nflog"
 )
 
 func TestLinuxNflog(t *testing.T) {
