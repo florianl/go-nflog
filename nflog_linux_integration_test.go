@@ -43,18 +43,18 @@ func TestLinuxNflog(t *testing.T) {
 }
 
 func startNflog(wg *sync.WaitGroup, group uint16) (func(), error) {
-	config := nflog.Config{
+	config := Config{
 		Group:    group,
-		Copymode: nflog.NfUlnlCopyPacket,
+		Copymode: NfUlnlCopyPacket,
 	}
 
-	nf, err := nflog.Open(&config)
+	nf, err := Open(&config)
 	if err != nil {
 		return func() {}, err
 	}
 	wg.Add(1)
-	fn := func(m nflog.Msg) int {
-		fmt.Printf("--nflog-group %d\t%v\n", group, m[nflog.AttrPayload])
+	fn := func(m Msg) int {
+		fmt.Printf("--nflog-group %d\t%v\n", group, m[AttrPayload])
 		wg.Done()
 		return 1
 	}
