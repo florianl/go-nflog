@@ -5,8 +5,11 @@ package nflog
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
+
+	nflog "github.com/florianl/go-nflog"
 )
 
 func TestLinuxNflog(t *testing.T) {
@@ -39,4 +42,48 @@ func TestLinuxNflog(t *testing.T) {
 
 	// Block till the context expires
 	<-ctx.Done()
+}
+
+func startNflog(wg *sync.WaitGroup, group uint16) (func(), error) {
+	config := nflog.Config{
+		Group:    group,
+		Copymode: nflog.NfUlnlCopyPacket,
+	}
+
+	nf, err := nflog.Open(&config)
+	if err != nil {
+		return func() {}, err
+	}
+	wg.Add(1)
+	fn := func(m nflog.Msg) int {
+		fmt.Printf("--nflog-group %d\t%v\n", group, m[nflog.AttrPayload])
+		wg.Done()
+		return 1
+	}
+
+	err = nf.Register(context.Background(), fn)
+	if err != nil {
+		return func() {}, err
+	}
+
+	return func() { nf.Close() }, nil
+}
+
+func TestLinuxMultiNflog(t *testing.T) {
+	var cleanUp []func()
+	var wg sync.WaitGroup
+
+	for i := 32; i <= 42; i++ {
+		function, err := startNflog(&wg, uint16(i))
+		if err != nil {
+			t.Fatalf("failed to open nflog socket for group %d: %v", i, err)
+		}
+		cleanUp = append(cleanUp, function)
+	}
+
+	wg.Wait()
+
+	for _, function := range cleanUp {
+		function()
+	}
 }
