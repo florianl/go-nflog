@@ -24,7 +24,7 @@ func extractAttribute(m Msg, logger *log.Logger, data []byte) error {
 			m[AttrHwProtocol] = binary.BigEndian.Uint16(ad.Bytes()[:2])
 			m[AttrHook] = ad.Bytes()[3]
 		case nfUlaAttrMark:
-			m[AttrMark] = ad.Bytes()
+			m[AttrMark] = ad.Uint32()
 		case nfUlaAttrTimestamp:
 			var sec, usec int64
 			r := bytes.NewReader(ad.Bytes()[:8])
