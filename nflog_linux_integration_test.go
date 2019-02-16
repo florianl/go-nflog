@@ -4,7 +4,6 @@ package nflog
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -28,7 +27,7 @@ func TestLinuxNflog(t *testing.T) {
 
 	fn := func(m Msg) int {
 		// Just print out the payload of the nflog packet
-		fmt.Printf("%v\n", m[AttrPayload])
+		t.Logf("%v\n", m[AttrPayload])
 		return 0
 	}
 
@@ -54,7 +53,7 @@ func startNflog(wg *sync.WaitGroup, group uint16) (func(), error) {
 	}
 	wg.Add(1)
 	fn := func(m Msg) int {
-		fmt.Printf("--nflog-group %d\t%v\n", group, m[AttrPayload])
+		t.Logf("--nflog-group %d\t%v\n", group, m[AttrPayload])
 		wg.Done()
 		return 1
 	}
