@@ -217,7 +217,12 @@ func putExtraHeader(familiy, version uint8, resid uint16) []byte {
 }
 
 func (nflog *Nflog) setConfig(afFamily uint8, oseq uint32, resid uint16, attrs []netlink.Attribute) (uint32, error) {
-	cmd, err := netlink.MarshalAttributes(attrs)
+	ad := netlink.NewAttributeEncoder()
+
+	for _, attr := range attrs {
+		ad.Bytes(attr.Type, attr.Data)
+	}
+	cmd, err := ad.Encode()
 	if err != nil {
 		return 0, err
 	}
