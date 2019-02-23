@@ -41,7 +41,7 @@ func TestLinuxNflog(t *testing.T) {
 	<-ctx.Done()
 }
 
-func startNflog(wg *sync.WaitGroup, group uint16) (func(), error) {
+func startNflog(t *testing.T, wg *sync.WaitGroup, group uint16) (func(), error) {
 	config := Config{
 		Group:    group,
 		Copymode: NfUlnlCopyPacket,
@@ -71,7 +71,7 @@ func TestLinuxMultiNflog(t *testing.T) {
 	var wg sync.WaitGroup
 
 	for i := 32; i <= 42; i++ {
-		function, err := startNflog(&wg, uint16(i))
+		function, err := startNflog(t, &wg, uint16(i))
 		if err != nil {
 			t.Fatalf("failed to open nflog socket for group %d: %v", i, err)
 		}
