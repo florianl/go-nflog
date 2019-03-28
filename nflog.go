@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/mdlayher/netlink"
 	"github.com/mdlayher/netlink/nlenc"
@@ -20,13 +21,14 @@ type Nflog struct {
 
 	logger *log.Logger
 
-	flags    []byte //uint16
-	bufsize  []byte //uint32
-	qthresh  []byte //uint32
-	timeout  []byte //uint32
-	group    uint16
-	copyMode uint8
-	settings uint16
+	flags       []byte //uint16
+	bufsize     []byte //uint32
+	qthresh     []byte //uint32
+	timeout     []byte //uint32
+	group       uint16
+	copyMode    uint8
+	settings    uint16
+	readTimeout time.Duration
 }
 
 // devNull satisfies io.Writer, in case *log.Logger is not provided
@@ -75,6 +77,7 @@ func Open(config *Config) (*Nflog, error) {
 	nflog.group = config.Group
 	nflog.copyMode = config.Copymode
 	nflog.settings = config.Settings
+	nflog.readTimeout = config.ReadTimeout
 
 	return &nflog, nil
 }
@@ -177,6 +180,8 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 			}
 		}()
 		for {
+			deadline := time.Now().Add(nflog.readTimeout)
+			nflog.Con.SetReadDeadline(deadline)
 			reply, err := nflog.Con.Receive()
 			if err != nil {
 				nflog.logger.Printf("Could not receive message: %v", err)
@@ -184,7 +189,7 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 			}
 
 			for _, msg := range reply {
-				if msg.Header.Type == netlink.HeaderTypeDone {
+				if msg.Header.Type == netlink.Done {
 					// this is the last message of a batch
 					// continue to receive messages
 					break
@@ -231,7 +236,7 @@ func (nflog *Nflog) setConfig(afFamily uint8, oseq uint32, resid uint16, attrs [
 	req := netlink.Message{
 		Header: netlink.Header{
 			Type:     netlink.HeaderType((nfnlSubSysUlog << 8) | nfUlnlMsgConfig),
-			Flags:    netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge,
+			Flags:    netlink.Request | netlink.Acknowledge,
 			Sequence: oseq,
 		},
 		Data: data,

@@ -3,6 +3,7 @@ package nflog
 import (
 	"errors"
 	"log"
+	"time"
 )
 
 // Various constants
@@ -141,6 +142,9 @@ type Config struct {
 
 	// Optional settings to enable/disable features
 	Settings uint16
+
+	// Time till a read action times out
+	ReadTimeout time.Duration
 
 	// Interface to log internals.
 	Logger *log.Logger
