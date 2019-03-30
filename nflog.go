@@ -180,8 +180,7 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 			}
 		}()
 		for {
-			deadline := time.Now().Add(nflog.readTimeout)
-			nflog.Con.SetReadDeadline(deadline)
+			nflog.setReadTimeout()
 			reply, err := nflog.Con.Receive()
 			if err != nil {
 				nflog.logger.Printf("Could not receive message: %v", err)
