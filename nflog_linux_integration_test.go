@@ -4,7 +4,6 @@ package nflog
 
 import (
 	"context"
-	"sync"
 	"testing"
 	"time"
 )
@@ -12,8 +11,9 @@ import (
 func TestLinuxNflog(t *testing.T) {
 	//Set configuration parameters
 	config := Config{
-		Group:    100,
-		Copymode: NfUlnlCopyPacket,
+		Group:       100,
+		Copymode:    NfUlnlCopyPacket,
+		ReadTimeout: 10 * time.Millisecond,
 	}
 	// Open a socket to the netfilter log subsystem
 	nf, err := Open(&config)
@@ -41,20 +41,19 @@ func TestLinuxNflog(t *testing.T) {
 	<-ctx.Done()
 }
 
-func startNflog(t *testing.T, wg *sync.WaitGroup, group uint16) (func(), error) {
+func startNflog(t *testing.T, group uint16) (func(), error) {
 	config := Config{
-		Group:    group,
-		Copymode: NfUlnlCopyPacket,
+		Group:       group,
+		Copymode:    NfUlnlCopyPacket,
+		ReadTimeout: 10 * time.Millisecond,
 	}
 
 	nf, err := Open(&config)
 	if err != nil {
 		return func() {}, err
 	}
-	wg.Add(1)
 	fn := func(m Msg) int {
 		t.Logf("--nflog-group %d\t%v\n", group, m[AttrPayload])
-		wg.Done()
 		return 1
 	}
 
@@ -68,17 +67,16 @@ func startNflog(t *testing.T, wg *sync.WaitGroup, group uint16) (func(), error) 
 
 func TestLinuxMultiNflog(t *testing.T) {
 	var cleanUp []func()
-	var wg sync.WaitGroup
 
-	for i := 32; i <= 42; i++ {
-		function, err := startNflog(t, &wg, uint16(i))
+	for i := 1; i <= 42; i++ {
+		function, err := startNflog(t, uint16(i))
 		if err != nil {
 			t.Fatalf("failed to open nflog socket for group %d: %v", i, err)
 		}
 		cleanUp = append(cleanUp, function)
 	}
 
-	wg.Wait()
+	time.Sleep(5 * time.Second)
 
 	for _, function := range cleanUp {
 		function()
