@@ -68,7 +68,7 @@ func startNflog(t *testing.T, group uint16) (func(), error) {
 func TestLinuxMultiNflog(t *testing.T) {
 	var cleanUp []func()
 
-	for i := 1; i <= 42; i++ {
+	for i := 32; i <= 42; i++ {
 		function, err := startNflog(t, uint16(i))
 		if err != nil {
 			t.Fatalf("failed to open nflog socket for group %d: %v", i, err)
