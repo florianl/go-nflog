@@ -5,6 +5,8 @@ package nflog
 import "time"
 
 func (nflog *Nflog) setReadTimeout() {
-	deadline := time.Now().Add(nflog.readTimeout)
-	nflog.Con.SetReadDeadline(deadline)
+	if nflog.readTimeout != 0 {
+		deadline := time.Now().Add(nflog.readTimeout)
+		nflog.Con.SetReadDeadline(deadline)
+	}
 }
