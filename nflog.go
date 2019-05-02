@@ -81,7 +81,7 @@ func Open(config *Config) (*Nflog, error) {
 	if config.ReadTimeout > 0 {
 		nflog.setReadTimeout = func() {
 			deadline := time.Now().Add(config.ReadTimeout)
-			nfqueue.Con.SetReadDeadline(deadline)
+			nflog.Con.SetReadDeadline(deadline)
 		}
 	}
 
