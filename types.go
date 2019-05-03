@@ -143,7 +143,7 @@ type Config struct {
 	// Optional settings to enable/disable features
 	Settings uint16
 
-	// Time till a read action times out
+	// Time till a read action times out - only available for Go >= 1.12
 	ReadTimeout time.Duration
 
 	// Interface to log internals.
