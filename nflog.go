@@ -21,14 +21,14 @@ type Nflog struct {
 
 	logger *log.Logger
 
-	flags       []byte //uint16
-	bufsize     []byte //uint32
-	qthresh     []byte //uint32
-	timeout     []byte //uint32
-	group       uint16
-	copyMode    uint8
-	settings    uint16
-	readTimeout time.Duration
+	flags          []byte //uint16
+	bufsize        []byte //uint32
+	qthresh        []byte //uint32
+	timeout        []byte //uint32
+	group          uint16
+	copyMode       uint8
+	settings       uint16
+	setReadTimeout func()
 }
 
 // devNull satisfies io.Writer, in case *log.Logger is not provided
@@ -77,7 +77,13 @@ func Open(config *Config) (*Nflog, error) {
 	nflog.group = config.Group
 	nflog.copyMode = config.Copymode
 	nflog.settings = config.Settings
-	nflog.readTimeout = config.ReadTimeout
+
+	if config.ReadTimeout > 0 {
+		nflog.setReadTimeout = func() {
+			deadline := time.Now().Add(config.ReadTimeout)
+			nflog.Con.SetReadDeadline(deadline)
+		}
+	}
 
 	return &nflog, nil
 }
