@@ -29,7 +29,7 @@ type Nflog struct {
 	group          uint16
 	copyMode       uint8
 	settings       uint16
-	setReadTimeout func()
+	setReadTimeout func() error
 }
 
 // devNull satisfies io.Writer, in case *log.Logger is not provided
@@ -80,10 +80,12 @@ func Open(config *Config) (*Nflog, error) {
 	nflog.settings = config.Settings
 
 	if config.ReadTimeout > 0 {
-		nflog.setReadTimeout = func() {
+		nflog.setReadTimeout = func() error {
 			deadline := time.Now().Add(config.ReadTimeout)
-			nflog.Con.SetReadDeadline(deadline)
+			return nflog.Con.SetReadDeadline(deadline)
 		}
+	} else {
+		nflog.setReadTimeout = func() error { return nil }
 	}
 
 	return &nflog, nil
