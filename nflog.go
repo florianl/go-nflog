@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"unsafe"
 
 	"github.com/mdlayher/netlink"
 	"github.com/mdlayher/netlink/nlenc"
@@ -39,6 +40,23 @@ func (devNull) Write(p []byte) (int, error) {
 	return 0, nil
 }
 
+// for detailes see https://github.com/tensorflow/tensorflow/blob/master/tensorflow/go/tensor.go#L488-L505
+var nativeEndian binary.ByteOrder
+
+func init() {
+	buf := [2]byte{}
+	*(*uint16)(unsafe.Pointer(&buf[0])) = uint16(0xABCD)
+
+	switch buf {
+	case [2]byte{0xCD, 0xAB}:
+		nativeEndian = binary.LittleEndian
+	case [2]byte{0xAB, 0xCD}:
+		nativeEndian = binary.BigEndian
+	default:
+		panic("Could not determine native endianness.")
+	}
+}
+
 // Open a connection to the netfilter log subsystem
 func Open(config *Config) (*Nflog, error) {
 	var nflog Nflog
@@ -68,13 +86,13 @@ func Open(config *Config) (*Nflog, error) {
 	}
 
 	nflog.flags = []byte{0x00, 0x00}
-	binary.BigEndian.PutUint16(nflog.flags, config.Flags)
+	nativeEndian.PutUint16(nflog.flags, config.Flags)
 	nflog.timeout = []byte{0x00, 0x00, 0x00, 0x00}
-	binary.BigEndian.PutUint32(nflog.timeout, config.Timeout)
+	nativeEndian.PutUint32(nflog.timeout, config.Timeout)
 	nflog.bufsize = []byte{0x00, 0x00, 0x00, 0x00}
-	binary.BigEndian.PutUint32(nflog.bufsize, config.Bufsize)
+	nativeEndian.PutUint32(nflog.bufsize, config.Bufsize)
 	nflog.qthresh = []byte{0x00, 0x00, 0x00, 0x00}
-	binary.BigEndian.PutUint32(nflog.qthresh, config.QThresh)
+	nativeEndian.PutUint32(nflog.qthresh, config.QThresh)
 	nflog.group = config.Group
 	nflog.copyMode = config.Copymode
 	nflog.settings = config.Settings
@@ -222,10 +240,10 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 	return nil
 }
 
-// /include/uapi/linux/netfilter/nfnetlink.h:struct nfgenmsg{} res_id is Big Endian
+// /include/uapi/linux/netfilter/nfnetlink.h:struct nfgenmsg{}
 func putExtraHeader(familiy, version uint8, resid uint16) []byte {
 	buf := make([]byte, 2)
-	binary.BigEndian.PutUint16(buf, resid)
+	nativeEndian.PutUint16(buf, resid)
 	return append([]byte{familiy, version}, buf...)
 }
 
