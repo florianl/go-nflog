@@ -87,31 +87,6 @@ const (
 	nfUlaAttrCtInfo
 )
 
-// Various identifier,that can be the key of Msg map
-// A Msg map don't need to contain all of these keys.
-const (
-	AttrHwProtocol = iota
-	AttrHook
-	AttrMark
-	AttrTimestamp
-	AttrIfindexIndev
-	AttrIfindexOutdev
-	AttrIfindexPhysIndev
-	AttrIfindexPhysOutdev
-	AttrHwAddr
-	AttrPayload
-	AttrPrefix
-	AttrUID
-	AttrSeq
-	AttrSeqGlobal
-	AttrGID
-	AttrHwType
-	AttrHwHeader
-	AttrHwLen
-	AttrCt
-	AttrCtInfo
-)
-
 // Attribute contains various elements for nflog elements.
 // As not every value is contained in every nflog message,
 // the elements inside Attribute are pointers to these values
