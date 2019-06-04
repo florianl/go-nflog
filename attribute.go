@@ -12,7 +12,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func extractAttribute(m Msg, logger *log.Logger, data []byte) error {
+func extractAttribute(a *Attribute, logger *log.Logger, data []byte) error {
 	ad, err := netlink.NewAttributeDecoder(data)
 	if err != nil {
 		return err
@@ -21,10 +21,13 @@ func extractAttribute(m Msg, logger *log.Logger, data []byte) error {
 	for ad.Next() {
 		switch ad.Type() {
 		case nfUlaAttrPacketHdr:
-			m[AttrHwProtocol] = binary.BigEndian.Uint16(ad.Bytes()[:2])
-			m[AttrHook] = ad.Bytes()[3]
+			hwProtocol := nativeEndian.Uint16(ad.Bytes()[:2])
+			a.HwProtocol = &hwProtocol
+			hook := uint8(ad.Bytes()[3])
+			a.Hook = &hook
 		case nfUlaAttrMark:
-			m[AttrMark] = ad.Uint32()
+			mark := ad.Uint32()
+			a.Mark = &mark
 		case nfUlaAttrTimestamp:
 			var sec, usec int64
 			r := bytes.NewReader(ad.Bytes()[:8])
@@ -35,40 +38,57 @@ func extractAttribute(m Msg, logger *log.Logger, data []byte) error {
 			if err := binary.Read(r, binary.BigEndian, &usec); err != nil {
 				return err
 			}
-			m[AttrTimestamp] = time.Unix(sec, usec*1000)
+			timestamp := time.Unix(sec, usec*1000)
+			a.Timestamp = &timestamp
 		case nfUlaAttrIfindexIndev:
-			m[AttrIfindexIndev] = ad.Uint32()
+			inDev := ad.Uint32()
+			a.InDev = &inDev
 		case nfUlaAttrIfindexOutdev:
-			m[AttrIfindexOutdev] = ad.Uint32()
+			outDev := ad.Uint32()
+			a.OutDev = &outDev
 		case nfUlaAttrIfindexPhysIndev:
-			m[AttrIfindexPhysIndev] = ad.Uint32()
+			physInDev := ad.Uint32()
+			a.PhysInDev = &physInDev
 		case nfUlaAttrIfindexPhysOutdev:
-			m[AttrIfindexPhysOutdev] = ad.Uint32()
+			physOutDev := ad.Uint32()
+			a.PhysOutDev = &physOutDev
 		case nfUlaAttrHwaddr:
 			hwAddrLen := binary.BigEndian.Uint16(ad.Bytes()[:2])
-			m[AttrHwAddr] = (ad.Bytes())[4 : 4+hwAddrLen]
+			hwAddr := (ad.Bytes())[4 : 4+hwAddrLen]
+			a.HwAddr = &hwAddr
 		case nfUlaAttrPayload:
-			m[AttrPayload] = ad.Bytes()
+			payload := ad.Bytes()
+			a.Payload = &payload
 		case nfUlaAttrPrefix:
-			m[AttrPrefix] = ad.String()
+			prefix := ad.String()
+			a.Prefix = &prefix
 		case nfUlaAttrUID:
-			m[AttrUID] = ad.Uint32()
+			uid := ad.Uint32()
+			a.UID = &uid
 		case nfUlaAttrSeq:
-			m[AttrSeq] = ad.Uint32()
+			seq := ad.Uint32()
+			a.Seq = &seq
 		case nfUlaAttrSeqGlobal:
-			m[AttrSeqGlobal] = ad.Uint32()
+			seqGlobal := ad.Uint32()
+			a.SeqGlobal = &seqGlobal
 		case nfUlaAttrGID:
-			m[AttrGID] = ad.Uint32()
+			gid := ad.Uint32()
+			a.GID = &gid
 		case nfUlaAttrHwType:
-			m[AttrHwType] = ad.Uint16()
+			hwType := ad.Uint16()
+			a.HwType = &hwType
 		case nfUlaAttrHwHeader:
-			m[AttrHwHeader] = ad.Bytes()
+			hwHeader := ad.Bytes()
+			a.HwHeader = &hwHeader
 		case nfUlaAttrHwLen:
-			m[AttrHwLen] = ad.Uint16()
+			hwLen := ad.Uint16()
+			a.HwLen = &hwLen
 		case nfUlaAttrCt + nlafNested:
-			m[AttrCt] = ad.Bytes()
+			ct := ad.Bytes()
+			a.Ct = &ct
 		case nfUlaAttrCtInfo:
-			m[AttrCtInfo] = ad.Uint32()
+			ctInfo := ad.Uint32()
+			a.CtInfo = &ctInfo
 		default:
 			logger.Printf("Unknown attribute: %d %v\n", ad.Type(), ad.Bytes())
 		}
@@ -84,12 +104,12 @@ func checkHeader(data []byte) int {
 	return 0
 }
 
-func extractAttributes(logger *log.Logger, msg []byte) (Msg, error) {
-	var data = make(Msg)
+func extractAttributes(logger *log.Logger, msg []byte) (Attribute, error) {
+	attrs := Attribute{}
 
 	offset := checkHeader(msg[:2])
-	if err := extractAttribute(data, logger, msg[offset:]); err != nil {
-		return nil, err
+	if err := extractAttribute(&attrs, logger, msg[offset:]); err != nil {
+		return attrs, err
 	}
-	return data, nil
+	return attrs, nil
 }

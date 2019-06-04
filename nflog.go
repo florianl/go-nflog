@@ -123,7 +123,7 @@ func (nflog *Nflog) Close() error {
 
 // HookFunc is a function, that receives events from a Netlinkgroup
 // To stop receiving messages on this HookFunc, return something different than 0
-type HookFunc func(m Msg) int
+type HookFunc func(a Attribute) int
 
 // Register your own function as callback for a netfilter log group
 func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
@@ -220,12 +220,12 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 					// continue to receive messages
 					break
 				}
-				m, err := parseMsg(nflog.logger, msg)
+				attrs, err := parseMsg(nflog.logger, msg)
 				if err != nil {
 					nflog.logger.Printf("Could not parse message: %v", err)
 					continue
 				}
-				if ret := fn(m); ret != 0 {
+				if ret := fn(attrs); ret != 0 {
 					return
 				}
 			}
@@ -297,10 +297,10 @@ func htonsU32(i uint32) []byte {
 	return buf
 }
 
-func parseMsg(logger *log.Logger, msg netlink.Message) (Msg, error) {
-	m, err := extractAttributes(logger, msg.Data)
+func parseMsg(logger *log.Logger, msg netlink.Message) (Attribute, error) {
+	a, err := extractAttributes(logger, msg.Data)
 	if err != nil {
-		return nil, err
+		return Attribute{}, err
 	}
-	return m, nil
+	return a, nil
 }
