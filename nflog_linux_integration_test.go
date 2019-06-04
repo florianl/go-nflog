@@ -25,9 +25,9 @@ func TestLinuxNflog(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	fn := func(m Msg) int {
+	fn := func(a Attribute) int {
 		// Just print out the payload of the nflog packet
-		t.Logf("%v\n", m[AttrPayload])
+		t.Logf("%v\n", *a.Payload)
 		return 0
 	}
 
@@ -52,8 +52,8 @@ func startNflog(t *testing.T, group uint16) (func(), error) {
 	if err != nil {
 		return func() {}, err
 	}
-	fn := func(m Msg) int {
-		t.Logf("--nflog-group %d\t%v\n", group, m[AttrPayload])
+	fn := func(a Attribute) int {
+		t.Logf("--nflog-group %d\t%v\n", group, *a.Payload)
 		return 1
 	}
 
