@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log"
+	"net"
 	"time"
 	"unsafe"
 
@@ -125,7 +126,9 @@ func (nflog *Nflog) Close() error {
 // To stop receiving messages on this HookFunc, return something different than 0
 type HookFunc func(a Attribute) int
 
-// Register your own function as callback for a netfilter log group
+// Register your own function as callback for a netfilter log group.
+// Errors other than net.Timeout() will be reported via the provided log interface
+// and the receiving of netfilter log messages will be stopped.
 func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 
 	// unbinding existing handler (if any)
@@ -210,7 +213,10 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 			nflog.setReadTimeout()
 			reply, err := nflog.Con.Receive()
 			if err != nil {
-				nflog.logger.Printf("Could not receive message: %v", err)
+				if ne, ok := err.(net.Error); !ok || !ne.Timeout() {
+					nflog.logger.Printf("Could not receive message: Unexpected error: %v", err)
+					return
+				}
 				continue
 			}
 
@@ -243,7 +249,7 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 // /include/uapi/linux/netfilter/nfnetlink.h:struct nfgenmsg{}
 func putExtraHeader(familiy, version uint8, resid uint16) []byte {
 	buf := make([]byte, 2)
-	nativeEndian.PutUint16(buf, resid)
+	binary.BigEndian.PutUint16(buf, resid)
 	return append([]byte{familiy, version}, buf...)
 }
 
