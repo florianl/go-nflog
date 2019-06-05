@@ -23,7 +23,7 @@ func (_ *Nflog) Close() error {
 }
 
 // HookFunc is a function, that receives events from a Netlinkgroup
-type HookFunc func(_ Msg) int
+type HookFunc func(_ Attribute) int
 
 // Register is not implemented for OS other than Linux
 func (_ *Nflog) Register(_ context.Context, _ HookFunc) error {
