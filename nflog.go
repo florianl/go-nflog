@@ -14,7 +14,6 @@ import (
 	"github.com/mdlayher/netlink"
 	"github.com/mdlayher/netlink/nlenc"
 	"golang.org/x/sys/unix"
-	"golang.org/x/xerrors"
 )
 
 // Nflog represents a netfilter log handler
@@ -136,7 +135,7 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdPfUnbind}},
 	})
 	if err != nil {
-		return xerrors.Errorf("could not unbind existing handlers from socket: %w", err)
+		return fmt.Errorf("could not unbind existing handlers from socket: %v", err)
 	}
 
 	// binding to family
@@ -144,7 +143,7 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdPfBind}},
 	})
 	if err != nil {
-		return xerrors.Errorf("could not bind socket to family: %w", err)
+		return fmt.Errorf("could not bind socket to family: %v", err)
 	}
 
 	if (nflog.settings & GenericGroup) == GenericGroup {
@@ -153,7 +152,7 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 			{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdPfBind}},
 		})
 		if err != nil {
-			return xerrors.Errorf("could not bind to generic group: %w", err)
+			return fmt.Errorf("could not bind to generic group: %v", err)
 		}
 	}
 
@@ -162,7 +161,7 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdBind}},
 	})
 	if err != nil {
-		return xerrors.Errorf("could not bind to requested group %d: %w", nflog.group, err)
+		return fmt.Errorf("could not bind to requested group %d: %v", nflog.group, err)
 	}
 
 	// set copy mode and buffer size
@@ -172,7 +171,7 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 		{Type: nfUlACfgMode, Data: data},
 	})
 	if err != nil {
-		return xerrors.Errorf("could not set copy mode %d and buffer size %d: %w", nflog.copyMode, nflog.bufsize, err)
+		return fmt.Errorf("could not set copy mode %d and buffer size %d: %v", nflog.copyMode, nflog.bufsize, err)
 	}
 
 	var attrs []netlink.Attribute
