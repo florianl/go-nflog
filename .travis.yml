@@ -13,7 +13,7 @@ install:
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq update     ; fi
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo modprobe nfnetlink_log ; fi
     - go get golang.org/x/lint/golint
-    - go get -d ./...
+    - go get -d -t ./...
 
 before_script:
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo ip6tables -I OUTPUT -p ipv6-icmp -j NFLOG --nflog-group 100 ; fi
@@ -34,7 +34,7 @@ script:
     - go vet ./...
     - golint -set_exit_status ./...
     - go test -v -race ./...
-    - go test -c -tags integration .
+    - go test -c -race -tags integration .
     - |
         ping6 -c 10 -i 2 2606:4700:4700::1111 &
         export PING6_PID=$!

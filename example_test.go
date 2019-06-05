@@ -31,8 +31,8 @@ func ExampleNflog_Register() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	fn := func(m nflog.Msg) int {
-		fmt.Printf("%v\n", m[nflog.AttrPayload])
+	fn := func(attrs nflog.Attribute) int {
+		fmt.Printf("%v\n", attrs.Payload)
 		return 0
 	}
 

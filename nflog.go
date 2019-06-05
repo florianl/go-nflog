@@ -7,12 +7,13 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log"
+	"net"
 	"time"
+	"unsafe"
 
 	"github.com/mdlayher/netlink"
 	"github.com/mdlayher/netlink/nlenc"
 	"golang.org/x/sys/unix"
-	"golang.org/x/xerrors"
 )
 
 // Nflog represents a netfilter log handler
@@ -37,6 +38,23 @@ type devNull struct{}
 
 func (devNull) Write(p []byte) (int, error) {
 	return 0, nil
+}
+
+// for detailes see https://github.com/tensorflow/tensorflow/blob/master/tensorflow/go/tensor.go#L488-L505
+var nativeEndian binary.ByteOrder
+
+func init() {
+	buf := [2]byte{}
+	*(*uint16)(unsafe.Pointer(&buf[0])) = uint16(0xABCD)
+
+	switch buf {
+	case [2]byte{0xCD, 0xAB}:
+		nativeEndian = binary.LittleEndian
+	case [2]byte{0xAB, 0xCD}:
+		nativeEndian = binary.BigEndian
+	default:
+		panic("Could not determine native endianness.")
+	}
 }
 
 // Open a connection to the netfilter log subsystem
@@ -68,13 +86,13 @@ func Open(config *Config) (*Nflog, error) {
 	}
 
 	nflog.flags = []byte{0x00, 0x00}
-	binary.BigEndian.PutUint16(nflog.flags, config.Flags)
+	nativeEndian.PutUint16(nflog.flags, config.Flags)
 	nflog.timeout = []byte{0x00, 0x00, 0x00, 0x00}
-	binary.BigEndian.PutUint32(nflog.timeout, config.Timeout)
+	nativeEndian.PutUint32(nflog.timeout, config.Timeout)
 	nflog.bufsize = []byte{0x00, 0x00, 0x00, 0x00}
-	binary.BigEndian.PutUint32(nflog.bufsize, config.Bufsize)
+	nativeEndian.PutUint32(nflog.bufsize, config.Bufsize)
 	nflog.qthresh = []byte{0x00, 0x00, 0x00, 0x00}
-	binary.BigEndian.PutUint32(nflog.qthresh, config.QThresh)
+	nativeEndian.PutUint32(nflog.qthresh, config.QThresh)
 	nflog.group = config.Group
 	nflog.copyMode = config.Copymode
 	nflog.settings = config.Settings
@@ -105,9 +123,11 @@ func (nflog *Nflog) Close() error {
 
 // HookFunc is a function, that receives events from a Netlinkgroup
 // To stop receiving messages on this HookFunc, return something different than 0
-type HookFunc func(m Msg) int
+type HookFunc func(a Attribute) int
 
-// Register your own function as callback for a netfilter log group
+// Register your own function as callback for a netfilter log group.
+// Errors other than net.Timeout() will be reported via the provided log interface
+// and the receiving of netfilter log messages will be stopped.
 func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 
 	// unbinding existing handler (if any)
@@ -115,7 +135,7 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdPfUnbind}},
 	})
 	if err != nil {
-		return xerrors.Errorf("could not unbind existing handlers from socket: %w", err)
+		return fmt.Errorf("could not unbind existing handlers from socket: %v", err)
 	}
 
 	// binding to family
@@ -123,7 +143,7 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdPfBind}},
 	})
 	if err != nil {
-		return xerrors.Errorf("could not bind socket to family: %w", err)
+		return fmt.Errorf("could not bind socket to family: %v", err)
 	}
 
 	if (nflog.settings & GenericGroup) == GenericGroup {
@@ -132,7 +152,7 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 			{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdPfBind}},
 		})
 		if err != nil {
-			return xerrors.Errorf("could not bind to generic group: %w", err)
+			return fmt.Errorf("could not bind to generic group: %v", err)
 		}
 	}
 
@@ -141,7 +161,7 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdBind}},
 	})
 	if err != nil {
-		return xerrors.Errorf("could not bind to requested group %d: %w", nflog.group, err)
+		return fmt.Errorf("could not bind to requested group %d: %v", nflog.group, err)
 	}
 
 	// set copy mode and buffer size
@@ -151,7 +171,7 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 		{Type: nfUlACfgMode, Data: data},
 	})
 	if err != nil {
-		return xerrors.Errorf("could not set copy mode %d and buffer size %d: %w", nflog.copyMode, nflog.bufsize, err)
+		return fmt.Errorf("could not set copy mode %d and buffer size %d: %v", nflog.copyMode, nflog.bufsize, err)
 	}
 
 	var attrs []netlink.Attribute
@@ -192,7 +212,10 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 			nflog.setReadTimeout()
 			reply, err := nflog.Con.Receive()
 			if err != nil {
-				nflog.logger.Printf("Could not receive message: %v", err)
+				if ne, ok := err.(net.Error); !ok || !ne.Timeout() {
+					nflog.logger.Printf("Could not receive message: Unexpected error: %v", err)
+					return
+				}
 				continue
 			}
 
@@ -202,12 +225,12 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 					// continue to receive messages
 					break
 				}
-				m, err := parseMsg(nflog.logger, msg)
+				attrs, err := parseMsg(nflog.logger, msg)
 				if err != nil {
 					nflog.logger.Printf("Could not parse message: %v", err)
 					continue
 				}
-				if ret := fn(m); ret != 0 {
+				if ret := fn(attrs); ret != 0 {
 					return
 				}
 			}
@@ -222,7 +245,7 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 	return nil
 }
 
-// /include/uapi/linux/netfilter/nfnetlink.h:struct nfgenmsg{} res_id is Big Endian
+// /include/uapi/linux/netfilter/nfnetlink.h:struct nfgenmsg{}
 func putExtraHeader(familiy, version uint8, resid uint16) []byte {
 	buf := make([]byte, 2)
 	binary.BigEndian.PutUint16(buf, resid)
@@ -279,10 +302,10 @@ func htonsU32(i uint32) []byte {
 	return buf
 }
 
-func parseMsg(logger *log.Logger, msg netlink.Message) (Msg, error) {
-	m, err := extractAttributes(logger, msg.Data)
+func parseMsg(logger *log.Logger, msg netlink.Message) (Attribute, error) {
+	a, err := extractAttributes(logger, msg.Data)
 	if err != nil {
-		return nil, err
+		return Attribute{}, err
 	}
-	return m, nil
+	return a, nil
 }

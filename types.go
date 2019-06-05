@@ -87,30 +87,32 @@ const (
 	nfUlaAttrCtInfo
 )
 
-// Various identifier,that can be the key of Msg map
-// A Msg map don't need to contain all of these keys.
-const (
-	AttrHwProtocol = iota
-	AttrHook
-	AttrMark
-	AttrTimestamp
-	AttrIfindexIndev
-	AttrIfindexOutdev
-	AttrIfindexPhysIndev
-	AttrIfindexPhysOutdev
-	AttrHwAddr
-	AttrPayload
-	AttrPrefix
-	AttrUID
-	AttrSeq
-	AttrSeqGlobal
-	AttrGID
-	AttrHwType
-	AttrHwHeader
-	AttrHwLen
-	AttrCt
-	AttrCtInfo
-)
+// Attribute contains various elements for nflog elements.
+// As not every value is contained in every nflog message,
+// the elements inside Attribute are pointers to these values
+// or nil, if not present.
+type Attribute struct {
+	Hook       *uint8
+	Mark       *uint32
+	Timestamp  *time.Time
+	InDev      *uint32
+	PhysInDev  *uint32
+	OutDev     *uint32
+	PhysOutDev *uint32
+	Payload    *[]byte
+	Prefix     *string
+	UID        *uint32
+	Seq        *uint32
+	SeqGlobal  *uint32
+	GID        *uint32
+	HwType     *uint16
+	HwAddr     *[]byte
+	HwHeader   *[]byte
+	HwLen      *uint16
+	HwProtocol *uint16
+	CtInfo     *uint32
+	Ct         *[]byte
+}
 
 // Config contains options for a Conn.
 type Config struct {
@@ -149,6 +151,3 @@ type Config struct {
 	// Interface to log internals.
 	Logger *log.Logger
 }
-
-// Msg contains all the information of a connection
-type Msg map[int]interface{}

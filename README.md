@@ -13,8 +13,8 @@ func main() {
 
 	//Set configuration parameters
 	config := nflog.Config{
-		Group:    100,
-		Copymode: nflog.NfUlnlCopyPacket,
+		Group:       100,
+		Copymode:    nflog.NfUlnlCopyPacket,
 		ReadTimeout: 10 * time.Millisecond,
 	}
 
@@ -27,8 +27,8 @@ func main() {
 
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 
-	fn := func(m nflog.Msg) int {
-		fmt.Printf("%v\n", m[nflog.NfUlaAttrPayload])
+	fn := func(attrs nflog.Attribute) int {
+		fmt.Printf("%v\n", attrs.Payload)
 		return 0
 	}
 
