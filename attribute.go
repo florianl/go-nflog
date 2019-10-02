@@ -21,7 +21,7 @@ func extractAttribute(a *Attribute, logger *log.Logger, data []byte) error {
 	for ad.Next() {
 		switch ad.Type() {
 		case nfUlaAttrPacketHdr:
-			hwProtocol := nativeEndian.Uint16(ad.Bytes()[:2])
+			hwProtocol := binary.BigEndian.Uint16(ad.Bytes()[:2])
 			a.HwProtocol = &hwProtocol
 			hook := uint8(ad.Bytes()[3])
 			a.Hook = &hook
