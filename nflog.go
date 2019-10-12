@@ -1,5 +1,3 @@
-//+build linux
-
 package nflog
 
 import (
@@ -11,9 +9,10 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/florianl/go-nflog/internal/unix"
+
 	"github.com/mdlayher/netlink"
 	"github.com/mdlayher/netlink/nlenc"
-	"golang.org/x/sys/unix"
 )
 
 // Nflog represents a netfilter log handler
