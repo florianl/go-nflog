@@ -25,5 +25,5 @@ jobs:
     - name: golint
       if: matrix.platform == 'ubuntu-latest'
       run: |
-        go get golang.org/x/lint/golint
+        go install golang.org/x/lint/golint
         golint -set_exit_status $(go list ./... | grep -v internal/unix)
