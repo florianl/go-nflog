@@ -12,7 +12,6 @@ import (
 	"github.com/florianl/go-nflog/internal/unix"
 
 	"github.com/mdlayher/netlink"
-	"github.com/mdlayher/netlink/nlenc"
 )
 
 // Nflog represents a netfilter log handler
@@ -287,18 +286,12 @@ func (nflog *Nflog) execute(req netlink.Message) (uint32, error) {
 	}
 	for _, msg := range reply {
 		if seq != 0 {
-			return 0, fmt.Errorf("Received more than one message from the kernel")
+			return 0, fmt.Errorf("received more than one message from the kernel")
 		}
 		seq = msg.Header.Sequence
 	}
 
 	return seq, nil
-}
-
-func htonsU32(i uint32) []byte {
-	buf := make([]byte, 4)
-	nlenc.PutUint32(buf, i)
-	return buf
 }
 
 func parseMsg(logger *log.Logger, msg netlink.Message) (Attribute, error) {

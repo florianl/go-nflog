@@ -29,8 +29,8 @@ const (
 
 // Various errors
 var (
-	ErrCopyMode    = errors.New("Unsupported copy mode")
-	ErrUnknownFlag = errors.New("Unsupported flag")
+	ErrCopyMode    = errors.New("unsupported copy mode")
+	ErrUnknownFlag = errors.New("unsupported flag")
 )
 
 // nfLogSubSysUlog the netlink subsystem we will query
