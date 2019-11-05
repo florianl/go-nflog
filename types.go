@@ -36,12 +36,10 @@ var (
 // nfLogSubSysUlog the netlink subsystem we will query
 const nfnlSubSysUlog = 0x04
 
-// Message types
+// Message types from nfulnl_msg_types
 const (
-	// Kernel to userspace
-	nfUlnlMsgPacket = iota
 	// Userspace to kernel
-	nfUlnlMsgConfig
+	nfUlnlMsgConfig = 1
 )
 
 const (
