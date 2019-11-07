@@ -2,6 +2,7 @@
 
 package unix
 
+// various constants
 const (
 	NETLINK_NETFILTER = 0xc
 	NFNETLINK_V0      = 0x0
