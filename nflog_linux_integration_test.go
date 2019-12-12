@@ -12,7 +12,7 @@ func TestLinuxNflog(t *testing.T) {
 	//Set configuration parameters
 	config := Config{
 		Group:       100,
-		Copymode:    NfUlnlCopyPacket,
+		Copymode:    CopyPacket,
 		ReadTimeout: 10 * time.Millisecond,
 	}
 	// Open a socket to the netfilter log subsystem
@@ -44,7 +44,7 @@ func TestLinuxNflog(t *testing.T) {
 func startNflog(t *testing.T, group uint16) (func(), error) {
 	config := Config{
 		Group:       group,
-		Copymode:    NfUlnlCopyPacket,
+		Copymode:    CopyPacket,
 		ReadTimeout: 10 * time.Millisecond,
 	}
 

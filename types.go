@@ -9,17 +9,17 @@ import (
 // Various constants
 const (
 	// Available copy modes for Config.Copymode.
-	NfUlnlCopyNone byte = 0x00
-	NfUlnlCopyMeta byte = 0x01
+	CopyNone byte = 0x00
+	CopyMeta byte = 0x01
 	// Provides a complete copy of the packet in the Msg map.
 	// But can be limited by setting Config.Bufsize.
-	NfUlnlCopyPacket byte = 0x02
+	CopyPacket byte = 0x02
 
 	// Flags that can be set on a connection
-	NfUlnlCfgFSeq       uint16 = 0x0001
-	NfUlnlCfgFSeqGlobal uint16 = 0x0002
+	FlagSeq    uint16 = 0x0001
+	FlagGlobal uint16 = 0x0002
 	// Requires Kernel configuration of CONFIG_NETFILTER_NETLINK_GLUE_CT
-	NfUlnlCfgFConntrack uint16 = 0x0004
+	FlagConntrack uint16 = 0x0004
 )
 
 // Various optional settings

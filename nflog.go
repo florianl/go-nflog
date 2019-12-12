@@ -67,7 +67,7 @@ func Open(config *Config) (*Nflog, error) {
 		return nil, err
 	}
 
-	if config.Copymode != NfUlnlCopyNone && config.Copymode != NfUlnlCopyMeta && config.Copymode != NfUlnlCopyPacket {
+	if config.Copymode != CopyNone && config.Copymode != CopyMeta && config.Copymode != CopyPacket {
 		return nil, ErrCopyMode
 	}
 
@@ -108,7 +108,7 @@ func Open(config *Config) (*Nflog, error) {
 }
 
 func checkFlags(flags uint16) error {
-	if flags > NfUlnlCfgFConntrack {
+	if flags > FlagConntrack {
 		return ErrUnknownFlag
 	}
 	return nil
