@@ -104,7 +104,7 @@ func extractAttribute(a *Attribute, logger *log.Logger, data []byte) error {
 			hwLen := ad.Uint16()
 			a.HwLen = &hwLen
 			ad.ByteOrder = nativeEndian
-		case nfUlaAttrCt + nlafNested:
+		case nfUlaAttrCt + netlink.Nested:
 			ct := ad.Bytes()
 			a.Ct = &ct
 		case nfUlaAttrCtInfo:

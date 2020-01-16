@@ -60,8 +60,6 @@ const (
 	nfUlnlCfgCmdPfUnbind
 )
 
-const nlafNested = (1 << 15)
-
 const (
 	_ = iota
 	nfUlaAttrPacketHdr
