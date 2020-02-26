@@ -6,7 +6,7 @@ jobs:
   test:
     strategy:
       matrix:
-        go-version: [1.12.x, 1.13.x]
+        go-version: [1.13.x, 1.14.x]
         platform: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
     steps:
@@ -35,4 +35,6 @@ jobs:
       run: |
         export PATH=$PATH:$(go env GOPATH)/bin
         go get -u honnef.co/go/tools/cmd/staticcheck
-        staticcheck ./...
+        staticcheck -checks all .
+        # ignore should not use ALL_CAPS in Go names in internal/
+        staticcheck -checks all,-ST1003 ./internal/...
