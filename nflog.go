@@ -206,10 +206,9 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 			}
 		}()
 		for {
-			select {
-			case <-ctx.Done():
+			if err := ctx.Err(); err != nil {
+				nflog.logger.Printf("Stop receiving nflog messages: %v", err)
 				return
-			default:
 			}
 			nflog.setReadTimeout()
 			reply, err := nflog.Con.Receive()
