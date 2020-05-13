@@ -7,6 +7,9 @@ Example
 -------
 
 ```golang
+
+import "github.com/florianl/go-nflog/v3"
+
 func main() {
 	// Send outgoing pings to nflog group 100
 	// # sudo iptables -I OUTPUT -p icmp -j NFLOG --nflog-group 100
