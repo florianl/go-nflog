@@ -18,6 +18,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Ensure gofmt formatting
+      if: matrix.platform == 'ubuntu-latest'
       run: |
         export PATH=$PATH:$(go env GOPATH)/bin
         pwd
