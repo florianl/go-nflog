@@ -11,20 +11,27 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
     - name: Install Go
-      uses: actions/setup-go@v1
+      uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go-version }}
+
     - name: Checkout code
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
     - name: Ensure gofmt formatting
       run: |
+        export PATH=$PATH:$(go env GOPATH)/bin
+        pwd
+        ls
         [ "$(gofmt -l $(find . -name '*.go') 2>&1)" = "" ]
+
     - name: Download Go dependencies
       env:
         GOPROXY: "https://proxy.golang.org"
       run: go mod download
+
     - name: Test with -race
       run: go test -race -count=1 ./...
+
     - name: golint
       if: matrix.platform == 'ubuntu-latest'
       # https://github.com/actions/setup-go/issues/14
@@ -32,6 +39,7 @@ jobs:
         export PATH=$PATH:$(go env GOPATH)/bin
         go get -u golang.org/x/lint/golint
         golint -set_exit_status $(go list ./... | grep -v internal/unix)
+
     - name: staticcheck.io
       if: matrix.platform == 'ubuntu-latest'
       # https://github.com/actions/setup-go/issues/14
