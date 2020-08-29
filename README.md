@@ -3,8 +3,7 @@ go-nflog [![PkgGoDev](https://pkg.go.dev/badge/github.com/florianl/go-nflog)](ht
 
 This is `go-nflog` and it is written in [golang](https://golang.org/). It provides a [C](https://en.wikipedia.org/wiki/C_(programming_language))-binding free API to the netfilter based log subsystem of the [Linux kernel](https://www.kernel.org).
 
-Example
--------
+## Example
 
 ```golang
 func main() {
@@ -45,8 +44,7 @@ func main() {
 }
 ```
 
-Privileges
-----------
+## Privileges
 
 This package processes information directly from the kernel and therefore it requires special privileges. You
 can provide this privileges by adjusting the `CAP_NET_ADMIN` capabilities.
@@ -55,3 +53,7 @@ can provide this privileges by adjusting the `CAP_NET_ADMIN` capabilities.
 ```
 
 For documentation and more examples please take a look at [![GoDoc](https://godoc.org/github.com/florianl/go-nflog?status.svg)](https://godoc.org/github.com/florianl/go-nflog)
+
+## Requirements
+
+* A version of Go that is [supported by upstream](https://golang.org/doc/devel/release.html#policy)
