@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/florianl/go-nflog/internal/unix"
+	"github.com/florianl/go-nflog/v2/internal/unix"
 
 	"github.com/mdlayher/netlink"
 )
