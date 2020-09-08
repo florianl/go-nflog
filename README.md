@@ -52,7 +52,7 @@ can provide this privileges by adjusting the `CAP_NET_ADMIN` capabilities.
 	setcap 'cap_net_admin=+ep' /your/executable
 ```
 
-For documentation and more examples please take a look at [![GoDoc](https://godoc.org/github.com/florianl/go-nflog?status.svg)](https://godoc.org/github.com/florianl/go-nflog)
+For documentation and more examples please take a look at [![PkgGoDev](https://pkg.go.dev/badge/github.com/florianl/go-nflog)](https://pkg.go.dev/github.com/florianl/go-nflog)
 
 ## Requirements
 
