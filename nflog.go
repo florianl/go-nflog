@@ -83,13 +83,13 @@ func Open(config *Config) (*Nflog, error) {
 	}
 
 	nflog.flags = []byte{0x00, 0x00}
-	nativeEndian.PutUint16(nflog.flags, config.Flags)
+	binary.BigEndian.PutUint16(nflog.flags, config.Flags)
 	nflog.timeout = []byte{0x00, 0x00, 0x00, 0x00}
-	nativeEndian.PutUint32(nflog.timeout, config.Timeout)
+	binary.BigEndian.PutUint32(nflog.timeout, config.Timeout)
 	nflog.bufsize = []byte{0x00, 0x00, 0x00, 0x00}
-	nativeEndian.PutUint32(nflog.bufsize, config.Bufsize)
+	binary.BigEndian.PutUint32(nflog.bufsize, config.Bufsize)
 	nflog.qthresh = []byte{0x00, 0x00, 0x00, 0x00}
-	nativeEndian.PutUint32(nflog.qthresh, config.QThresh)
+	binary.BigEndian.PutUint32(nflog.qthresh, config.QThresh)
 	nflog.group = config.Group
 	nflog.copyMode = config.Copymode
 	nflog.settings = config.Settings
