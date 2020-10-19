@@ -105,11 +105,15 @@ func extractAttribute(a *Attribute, logger *log.Logger, data []byte) error {
 			a.HwLen = &hwLen
 			ad.ByteOrder = nativeEndian
 		case nfUlaAttrCt + netlink.Nested:
+			ad.ByteOrder = binary.BigEndian
 			ct := ad.Bytes()
 			a.Ct = &ct
+			ad.ByteOrder = nativeEndian
 		case nfUlaAttrCtInfo:
+			ad.ByteOrder = binary.BigEndian
 			ctInfo := ad.Uint32()
 			a.CtInfo = &ctInfo
+			ad.ByteOrder = nativeEndian
 		default:
 			logger.Printf("Unknown attribute: %d %v\n", ad.Type(), ad.Bytes())
 		}
