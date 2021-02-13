@@ -1,9 +1,9 @@
 module github.com/florianl/go-nflog/v2
 
 require (
-	github.com/google/go-cmp v0.5.2
-	github.com/mdlayher/netlink v1.1.0
-	golang.org/x/sys v0.0.0-20200908134130-d2e65c121b96
+	github.com/google/go-cmp v0.5.4
+	github.com/mdlayher/netlink v1.3.0
+	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c
 )
 
 go 1.13
