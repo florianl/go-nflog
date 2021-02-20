@@ -118,15 +118,29 @@ func (nflog *Nflog) Close() error {
 	return nflog.Con.Close()
 }
 
-// HookFunc is a function, that receives events from a Netlinkgroup
-// To stop receiving messages on this HookFunc, return something different than 0
-type HookFunc func(a Attribute) int
-
 // Register your own function as callback for a netfilter log group.
 // Errors other than net.Timeout() will be reported via the provided log interface
 // and the receiving of netfilter log messages will be stopped.
+//
+// To handle errors and continue receiving data with the
+// registered callback use RegisterWithErrorFunc() instead.
+//
+// Deprecated: Use RegisterWithErrorFunc() instead.
 func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
+	return nflog.RegisterWithErrorFunc(ctx, fn, func(err error) int {
+		if opError, ok := err.(*netlink.OpError); ok {
+			if opError.Timeout() || opError.Temporary() {
+				return 0
+			}
+		}
+		nflog.logger.Printf("Could not receive message: %v\n", err)
+		return 1
+	})
+}
 
+// RegisterWithErrorFunc attaches a callback function to a callback to a netfilter log group and allows
+// custom error handling for errors encountered when reading from the underlying netlink socket.
+func (nflog *Nflog) RegisterWithErrorFunc(ctx context.Context, fn HookFunc, errfn ErrorFunc) error {
 	// unbinding existing handler (if any)
 	seq, err := nflog.setConfig(unix.AF_UNSPEC, 0, 0, []netlink.Attribute{
 		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdPfUnbind}},
@@ -213,13 +227,10 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 			nflog.setReadTimeout()
 			reply, err := nflog.Con.Receive()
 			if err != nil {
-				if opError, ok := err.(*netlink.OpError); ok {
-					if opError.Timeout() || opError.Temporary() {
-						continue
-					}
+				if ret := errfn(err); ret != 0 {
+					return
 				}
-				nflog.logger.Printf("Could not receive message: Unexpected error: %v", err)
-				return
+				continue
 			}
 
 			for _, msg := range reply {
