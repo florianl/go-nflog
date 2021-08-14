@@ -16,9 +16,8 @@ func ExampleNflog_Register() {
 
 	//Set configuration parameters
 	config := nflog.Config{
-		Group:       100,
-		Copymode:    nflog.CopyPacket,
-		ReadTimeout: 10 * time.Millisecond,
+		Group:    100,
+		Copymode: nflog.CopyPacket,
 	}
 
 	nf, err := nflog.Open(&config)

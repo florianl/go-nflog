@@ -11,9 +11,8 @@ import (
 func TestLinuxNflog(t *testing.T) {
 	//Set configuration parameters
 	config := Config{
-		Group:       100,
-		Copymode:    CopyPacket,
-		ReadTimeout: 10 * time.Millisecond,
+		Group:    100,
+		Copymode: CopyPacket,
 	}
 	// Open a socket to the netfilter log subsystem
 	nf, err := Open(&config)
@@ -45,9 +44,8 @@ func startNflog(ctx context.Context, t *testing.T, group uint16) (func(), error)
 	t.Helper()
 
 	config := Config{
-		Group:       group,
-		Copymode:    CopyPacket,
-		ReadTimeout: 10 * time.Millisecond,
+		Group:    group,
+		Copymode: CopyPacket,
 	}
 
 	nf, err := Open(&config)
