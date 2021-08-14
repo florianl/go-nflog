@@ -142,6 +142,10 @@ type Config struct {
 	Settings uint16
 
 	// Time till a read action times out - only available for Go >= 1.12
+	//
+	// Deprecated: Cancel the context passed to RegisterWithErrorFunc() or Register()
+	// to remove the hook from the nfloq gracefully. Setting this value does no longer
+	// have an effect on nflog.
 	ReadTimeout time.Duration
 
 	// Interface to log internals.

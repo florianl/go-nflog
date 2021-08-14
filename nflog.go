@@ -20,14 +20,13 @@ type Nflog struct {
 
 	logger *log.Logger
 
-	flags          []byte //uint16
-	bufsize        []byte //uint32
-	qthresh        []byte //uint32
-	timeout        []byte //uint32
-	group          uint16
-	copyMode       uint8
-	settings       uint16
-	setReadTimeout func() error
+	flags    []byte //uint16
+	bufsize  []byte //uint32
+	qthresh  []byte //uint32
+	timeout  []byte //uint32
+	group    uint16
+	copyMode uint8
+	settings uint16
 }
 
 // devNull satisfies io.Writer, in case *log.Logger is not provided
@@ -93,15 +92,6 @@ func Open(config *Config) (*Nflog, error) {
 	nflog.group = config.Group
 	nflog.copyMode = config.Copymode
 	nflog.settings = config.Settings
-
-	if config.ReadTimeout > 0 {
-		nflog.setReadTimeout = func() error {
-			deadline := time.Now().Add(config.ReadTimeout)
-			return nflog.Con.SetReadDeadline(deadline)
-		}
-	} else {
-		nflog.setReadTimeout = func() error { return nil }
-	}
 
 	return &nflog, nil
 }
@@ -219,12 +209,18 @@ func (nflog *Nflog) RegisterWithErrorFunc(ctx context.Context, fn HookFunc, errf
 				return
 			}
 		}()
+		go func() {
+			// block until context is done
+			<-ctx.Done()
+			// Set the read deadline to a point in the past to interrupt
+			// possible blocking Receive() calls.
+			nflog.Con.SetReadDeadline(time.Now().Add(-1 * time.Second))
+		}()
 		for {
 			if err := ctx.Err(); err != nil {
 				nflog.logger.Printf("Stop receiving nflog messages: %v", err)
 				return
 			}
-			nflog.setReadTimeout()
 			reply, err := nflog.Con.Receive()
 			if err != nil {
 				if ret := errfn(err); ret != 0 {
