@@ -1,4 +1,4 @@
-go-nflog [![PkgGoDev](https://pkg.go.dev/badge/github.com/florianl/go-nflog)](https://pkg.go.dev/github.com/florianl/go-nflog) [![Build Status](https://travis-ci.org/florianl/go-nflog.svg?branch=master)](https://travis-ci.org/florianl/go-nflog) [![Go Report Card](https://goreportcard.com/badge/github.com/florianl/go-nflog)](https://goreportcard.com/report/github.com/florianl/go-nflog)
+go-nflog [![PkgGoDev](https://pkg.go.dev/badge/github.com/florianl/go-nflog)](https://pkg.go.dev/github.com/florianl/go-nflog) [![Go Report Card](https://goreportcard.com/badge/github.com/florianl/go-nflog)](https://goreportcard.com/report/github.com/florianl/go-nflog) [![Go](https://github.com/florianl/go-nflog/actions/workflows/go.yml/badge.svg)](https://github.com/florianl/go-nflog/actions/workflows/go.yml)
 ============
 
 This is `go-nflog` and it is written in [golang](https://golang.org/). It provides a [C](https://en.wikipedia.org/wiki/C_(programming_language))-binding free API to the netfilter based log subsystem of the [Linux kernel](https://www.kernel.org).
