@@ -26,15 +26,24 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	fn := func(attrs nflog.Attribute) int {
-		fmt.Printf("%v\n", attrs.Payload)
+	// hook that is called for every received packet by the nflog group
+	hook := func(attrs nflog.Attribute) int {
+		// Just print out the payload of the nflog packet
+		fmt.Fprintf(os.Stdout, "%#v\n", attrs.Payload)
+		return 0
+	}
+
+	// errFunc that is called for every error on the registered hook
+	errFunc := func(e error) int {
+		// Just log the error and return 0 to continue receiving packets
+		fmt.Fprintf(os.Stderr, "received error on hook: %v", e)
 		return 0
 	}
 
 	// Register your function to listen on nflog group 100
-	err = nf.Register(ctx, fn)
+	err = nf.RegisterWithErrorFunc(ctx, hook, errFunc)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintf(os.Stderr, "failed to register hook function: %v", err)
 		return
 	}
 

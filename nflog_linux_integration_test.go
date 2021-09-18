@@ -1,4 +1,5 @@
-//+build integration,linux
+//go:build integration && linux
+// +build integration,linux
 
 package nflog
 
@@ -24,14 +25,20 @@ func TestLinuxNflog(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	fn := func(a Attribute) int {
+	// hook function that is called for every received packet by the nflog group
+	hook := func(a Attribute) int {
 		// Just print out the payload of the nflog packet
 		t.Logf("%v\n", *a.Payload)
 		return 0
 	}
 
+	errFunc := func(e error) int {
+		t.Logf("received error on hook: %v", e)
+		return 0
+	}
+
 	// Register your function to listen on nflog group 100
-	err = nf.Register(ctx, fn)
+	err = nf.RegisterWithErrorFunc(ctx, hook, errFunc)
 	if err != nil {
 		t.Fatalf("failed to register hook function: %v", err)
 	}
