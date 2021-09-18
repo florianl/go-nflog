@@ -33,7 +33,7 @@ jobs:
 
     - name: Integration test
       if: matrix.platform == 'ubuntu-latest' && startsWith(matrix.go-version, '1.17')
-      run: go test -v -tags integration -race -count=1 ./...
+      run: go test -v -tags integration -exec=sudo -race -count=1 ./...
 
     - name: golint
       if: matrix.platform == 'ubuntu-latest'
