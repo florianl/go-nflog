@@ -2,7 +2,6 @@ package nflog
 
 import (
 	"errors"
-	"log"
 	"time"
 )
 
@@ -110,6 +109,10 @@ type Attribute struct {
 	Ct         *[]byte
 }
 
+type Logger interface {
+	Printf(format string, args ...interface{})
+}
+
 // Config contains options for a Conn.
 type Config struct {
 	// Network namespace the Nflog needs to operate in. If set to 0 (default),
@@ -149,7 +152,7 @@ type Config struct {
 	ReadTimeout time.Duration
 
 	// Interface to log internals.
-	Logger *log.Logger
+	Logger Logger
 }
 
 // ErrorFunc is a function that receives all errors that happen while reading

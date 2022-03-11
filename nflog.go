@@ -18,7 +18,7 @@ type Nflog struct {
 	// Con is the pure representation of a netlink socket
 	Con *netlink.Conn
 
-	logger *log.Logger
+	logger Logger
 
 	flags    []byte //uint16
 	bufsize  []byte //uint32
@@ -301,7 +301,7 @@ func (nflog *Nflog) execute(req netlink.Message) (uint32, error) {
 	return seq, nil
 }
 
-func parseMsg(logger *log.Logger, msg netlink.Message) (Attribute, error) {
+func parseMsg(logger Logger, msg netlink.Message) (Attribute, error) {
 	a, err := extractAttributes(logger, msg.Data)
 	if err != nil {
 		return Attribute{}, err

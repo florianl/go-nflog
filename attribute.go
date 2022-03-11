@@ -3,7 +3,6 @@ package nflog
 import (
 	"bytes"
 	"encoding/binary"
-	"log"
 	"time"
 
 	"github.com/florianl/go-nflog/v2/internal/unix"
@@ -11,7 +10,7 @@ import (
 	"github.com/mdlayher/netlink"
 )
 
-func extractAttribute(a *Attribute, logger *log.Logger, data []byte) error {
+func extractAttribute(a *Attribute, logger Logger, data []byte) error {
 	ad, err := netlink.NewAttributeDecoder(data)
 	if err != nil {
 		return err
@@ -129,7 +128,7 @@ func checkHeader(data []byte) int {
 	return 0
 }
 
-func extractAttributes(logger *log.Logger, msg []byte) (Attribute, error) {
+func extractAttributes(logger Logger, msg []byte) (Attribute, error) {
 	attrs := Attribute{}
 
 	offset := checkHeader(msg[:2])
