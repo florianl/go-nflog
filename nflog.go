@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 	"unsafe"
 
@@ -19,6 +20,8 @@ type Nflog struct {
 	Con *netlink.Conn
 
 	logger *log.Logger
+
+	wg sync.WaitGroup
 
 	flags    []byte //uint16
 	bufsize  []byte //uint32
@@ -105,7 +108,9 @@ func checkFlags(flags uint16) error {
 
 // Close the connection to the netfilter log subsystem
 func (nflog *Nflog) Close() error {
-	return nflog.Con.Close()
+	err := nflog.Con.Close()
+	nflog.wg.Wait()
+	return err
 }
 
 // Register your own function as callback for a netfilter log group.
@@ -131,6 +136,10 @@ func (nflog *Nflog) Register(ctx context.Context, fn HookFunc) error {
 // RegisterWithErrorFunc attaches a callback function to a callback to a netfilter log group and allows
 // custom error handling for errors encountered when reading from the underlying netlink socket.
 func (nflog *Nflog) RegisterWithErrorFunc(ctx context.Context, fn HookFunc, errfn ErrorFunc) error {
+	// Avoid race conditions when dealing with the socket and receiving content.
+	nflog.wg.Add(1)
+	defer nflog.wg.Done()
+
 	// unbinding existing handler (if any)
 	seq, err := nflog.setConfig(unix.AF_UNSPEC, 0, 0, []netlink.Attribute{
 		{Type: nfUlACfgCmd, Data: []byte{nfUlnlCfgCmdPfUnbind}},
@@ -209,12 +218,15 @@ func (nflog *Nflog) RegisterWithErrorFunc(ctx context.Context, fn HookFunc, errf
 				return
 			}
 		}()
+
+		nflog.wg.Add(1)
 		go func() {
 			// block until context is done
 			<-ctx.Done()
 			// Set the read deadline to a point in the past to interrupt
 			// possible blocking Receive() calls.
 			nflog.Con.SetReadDeadline(time.Now().Add(-1 * time.Second))
+			nflog.wg.Done()
 		}()
 		for {
 			if err := ctx.Err(); err != nil {
