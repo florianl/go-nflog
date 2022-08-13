@@ -81,6 +81,8 @@ const (
 	nfUlaAttrHwLen
 	nfUlaAttrCt
 	nfUlaAttrCtInfo
+	nfUlaAttrVlan
+	nfulaAttrL2Hdr
 )
 
 // Attribute contains various elements for nflog elements.
@@ -108,6 +110,7 @@ type Attribute struct {
 	HwProtocol *uint16
 	CtInfo     *uint32
 	Ct         *[]byte
+	Layer2Hdr  *[]byte
 }
 
 // Config contains options for a Conn.

@@ -114,6 +114,11 @@ func extractAttribute(a *Attribute, logger *log.Logger, data []byte) error {
 			ctInfo := ad.Uint32()
 			a.CtInfo = &ctInfo
 			ad.ByteOrder = nativeEndian
+		case nfulaAttrL2Hdr:
+			ad.ByteOrder = binary.BigEndian
+			l2hdr := ad.Bytes()
+			a.Layer2Hdr = &l2hdr
+			ad.ByteOrder = nativeEndian
 		default:
 			logger.Printf("Unknown attribute: %d %v\n", ad.Type(), ad.Bytes())
 		}
