@@ -30,7 +30,6 @@ func TestOpen(t *testing.T) {
 			if err != tc.err {
 				t.Fatalf("Unexpected error - want: %v\tgot: %v\n", tc.err, err)
 			}
-
 		})
 	}
 }

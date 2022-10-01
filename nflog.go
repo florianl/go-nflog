@@ -23,10 +23,10 @@ type Nflog struct {
 
 	wg sync.WaitGroup
 
-	flags    []byte //uint16
-	bufsize  []byte //uint32
-	qthresh  []byte //uint32
-	timeout  []byte //uint32
+	flags    []byte // uint16
+	bufsize  []byte // uint32
+	qthresh  []byte // uint32
+	timeout  []byte // uint32
 	group    uint16
 	copyMode uint8
 	settings uint16
@@ -193,7 +193,6 @@ func (nflog *Nflog) RegisterWithErrorFunc(ctx context.Context, fn HookFunc, errf
 	if nflog.timeout[0] != 0 || nflog.timeout[1] != 0 || nflog.timeout[2] != 0 || nflog.timeout[3] != 0 {
 		// set timeout
 		attrs = append(attrs, netlink.Attribute{Type: nfUlACfgTimeOut, Data: nflog.timeout})
-
 	}
 
 	if nflog.qthresh[0] != 0 || nflog.qthresh[1] != 1 || nflog.qthresh[2] != 0 || nflog.qthresh[3] != 0 {

@@ -10,7 +10,7 @@ import (
 )
 
 func TestLinuxNflog(t *testing.T) {
-	//Set configuration parameters
+	// Set configuration parameters
 	config := Config{
 		Group:    100,
 		Copymode: CopyPacket,

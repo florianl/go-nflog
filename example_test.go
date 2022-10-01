@@ -16,7 +16,7 @@ func ExampleNflog_Register() {
 	// Send outgoing pings to nflog group 100
 	// # sudo iptables -I OUTPUT -p icmp -j NFLOG --nflog-group 100
 
-	//Set configuration parameters
+	// Set configuration parameters
 	config := nflog.Config{
 		Group:    100,
 		Copymode: nflog.CopyPacket,
