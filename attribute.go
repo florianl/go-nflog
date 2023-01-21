@@ -3,6 +3,7 @@ package nflog
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"log"
 	"time"
 
@@ -119,6 +120,14 @@ func extractAttribute(a *Attribute, logger *log.Logger, data []byte) error {
 			l2hdr := ad.Bytes()
 			a.Layer2Hdr = &l2hdr
 			ad.ByteOrder = nativeEndian
+		case nfUlaAttrVlan:
+			ad.ByteOrder = binary.BigEndian
+			info := &VLAN{}
+			if err := extractVLAN(ad.Bytes(), info); err != nil {
+				return err
+			}
+			a.VLAN = info
+			ad.ByteOrder = nativeEndian
 		default:
 			logger.Printf("Unknown attribute: %d %v\n", ad.Type(), ad.Bytes())
 		}
@@ -142,4 +151,28 @@ func extractAttributes(logger *log.Logger, msg []byte) (Attribute, error) {
 		return attrs, err
 	}
 	return attrs, nil
+}
+
+const (
+	_              = iota
+	nfulaVLANProto /* __be16 */
+	nfulaVLANTCI   /* __be16 */
+)
+
+func extractVLAN(data []byte, info *VLAN) error {
+	ad, err := netlink.NewAttributeDecoder(data)
+	if err != nil {
+		return err
+	}
+	for ad.Next() {
+		switch ad.Type() {
+		case nfulaVLANProto:
+			info.Proto = ad.Uint16()
+		case nfulaVLANTCI:
+			info.TCI = ad.Uint16()
+		default:
+			return fmt.Errorf("extractVLAN()\t%d\n\t%v", ad.Type(), ad.Bytes())
+		}
+	}
+	return nil
 }
