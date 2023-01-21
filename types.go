@@ -111,6 +111,13 @@ type Attribute struct {
 	CtInfo     *uint32
 	Ct         *[]byte
 	Layer2Hdr  *[]byte
+	VLAN       *VLAN
+}
+
+// VLAN holds the VLAN information.
+type VLAN struct {
+	Proto uint16
+	TCI   uint16
 }
 
 // Config contains options for a Conn.
