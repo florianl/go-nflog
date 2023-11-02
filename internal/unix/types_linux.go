@@ -12,4 +12,5 @@ const (
 	AF_UNSPEC         = linux.AF_UNSPEC
 	AF_INET           = linux.AF_INET
 	AF_INET6          = linux.AF_INET6
+	AF_BRIDGE         = linux.AF_BRIDGE
 )
