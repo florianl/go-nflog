@@ -76,6 +76,12 @@ func Open(config *Config) (*Nflog, error) {
 	if err != nil {
 		return nil, err
 	}
+	if config.SkipErrorENOBUFS {
+		if err := con.SetOption(netlink.NoENOBUFS, true); err != nil {
+			con.Close()
+			return nil, err
+		}
+	}
 	nflog.Con = con
 
 	if config.Logger == nil {

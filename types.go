@@ -151,6 +151,12 @@ type Config struct {
 	// Optional settings to enable/disable features
 	Settings uint16
 
+	// If SkipErrorENOBUFS is set to "true", it will skip the "ENOBUFS" error,
+	// normally, the "ENOBUFS" error would close the netlink socket if there are a lot of messages,
+	// however, enabling this option allows the socket to continue working
+	// (at the cost of potentially losing some messages)
+	SkipErrorENOBUFS bool
+
 	// Time till a read action times out - only available for Go >= 1.12
 	//
 	// Deprecated: Cancel the context passed to RegisterWithErrorFunc() or Register()
