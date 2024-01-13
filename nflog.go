@@ -195,9 +195,9 @@ func (nflog *Nflog) RegisterWithErrorFunc(ctx context.Context, fn HookFunc, errf
 		attrs = append(attrs, netlink.Attribute{Type: nfUlACfgTimeOut, Data: nflog.timeout})
 	}
 
-	if nflog.qthresh[0] != 0 || nflog.qthresh[1] != 1 || nflog.qthresh[2] != 0 || nflog.qthresh[3] != 0 {
+	if nflog.qthresh[0] != 0 || nflog.qthresh[1] != 0 || nflog.qthresh[2] != 0 || nflog.qthresh[3] != 0 {
 		// set qthresh
-		attrs = append(attrs, netlink.Attribute{Type: nfUlACfgQThresh, Data: nflog.timeout})
+		attrs = append(attrs, netlink.Attribute{Type: nfUlACfgQThresh, Data: nflog.qthresh})
 	}
 
 	if len(attrs) != 0 {
