@@ -113,6 +113,11 @@ func (nflog *Nflog) Close() error {
 	return err
 }
 
+// SetOption allows to enable or disable netlink socket options.
+func (nflog *Nflog) SetOption(o netlink.ConnOption, enable bool) error {
+	return nflog.Con.SetOption(o, enable)
+}
+
 // Register your own function as callback for a netfilter log group.
 // Errors other than net.Timeout() will be reported via the provided log interface
 // and the receiving of netfilter log messages will be stopped.
