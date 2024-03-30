@@ -18,10 +18,17 @@ func main() {
 
 	nf, err := nflog.Open(&config)
 	if err != nil {
-		fmt.Println("could not open nflog socket:", err)
+		fmt.Fprintln(os.Stderr, "could not open nflog socket:", err)
 		return
 	}
 	defer nf.Close()
+
+	// NoENOBUFS - avoid fatal error if netlink buffer overflows.
+	if err := rtnl.SetOption(netlink.NoENOBUFS, true); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to set netlink option %v: %v",
+			netlink.NoENOBUFS, err)
+		return
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
