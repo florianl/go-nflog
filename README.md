@@ -23,8 +23,8 @@ func main() {
 	}
 	defer nf.Close()
 
-	// NoENOBUFS - avoid fatal error if netlink buffer overflows.
-	if err := rtnl.SetOption(netlink.NoENOBUFS, true); err != nil {
+	// Avoid receiving ENOBUFS errors.
+	if err := nf.SetOption(netlink.NoENOBUFS, true); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to set netlink option %v: %v",
 			netlink.NoENOBUFS, err)
 		return
