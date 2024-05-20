@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/florianl/go-nflog/v2/internal/unix"
@@ -12,7 +11,7 @@ import (
 	"github.com/mdlayher/netlink"
 )
 
-func extractAttribute(a *Attribute, logger *log.Logger, data []byte) error {
+func extractAttribute(a *Attribute, logger Logger, data []byte) error {
 	ad, err := netlink.NewAttributeDecoder(data)
 	if err != nil {
 		return err
@@ -129,7 +128,7 @@ func extractAttribute(a *Attribute, logger *log.Logger, data []byte) error {
 			a.VLAN = info
 			ad.ByteOrder = nativeEndian
 		default:
-			logger.Printf("Unknown attribute: %d %v\n", ad.Type(), ad.Bytes())
+			logger.Debugf("Unknown attribute: %d %v\n", ad.Type(), ad.Bytes())
 		}
 	}
 
@@ -143,7 +142,7 @@ func checkHeader(data []byte) int {
 	return 0
 }
 
-func extractAttributes(logger *log.Logger, msg []byte) (Attribute, error) {
+func extractAttributes(logger Logger, msg []byte) (Attribute, error) {
 	attrs := Attribute{}
 
 	offset := checkHeader(msg[:2])
