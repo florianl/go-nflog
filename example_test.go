@@ -29,6 +29,12 @@ func ExampleNflog_Register() {
 	}
 	defer nf.Close()
 
+	// Increase socket read buffer size to 512kB.
+	if err := nf.Con.SetReadBuffer(512 * 1024); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to set read buffer: %v", err)
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
