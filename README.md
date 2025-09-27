@@ -23,6 +23,12 @@ func main() {
 	}
 	defer nf.Close()
 
+	// Increase socket read buffer size to 512kB.
+	if err := nf.Con.SetReadBuffer(512 * 1024); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to set read buffer: %v", err)
+		return
+	}
+
 	// Avoid receiving ENOBUFS errors.
 	if err := nf.SetOption(netlink.NoENOBUFS, true); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to set netlink option %v: %v",
