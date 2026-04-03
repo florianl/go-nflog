@@ -114,7 +114,7 @@ func extractAttribute(a *Attribute, logger Logger, data []byte) error {
 			ctInfo := ad.Uint32()
 			a.CtInfo = &ctInfo
 			ad.ByteOrder = nativeEndian
-		case nfulaAttrL2Hdr:
+		case nfUlaAttrL2Hdr:
 			ad.ByteOrder = binary.BigEndian
 			l2hdr := bytes.Clone(ad.Bytes())
 			a.Layer2Hdr = &l2hdr

@@ -45,4 +45,4 @@ jobs:
       with:
         version: "2026.1"
         install-go: false
-        cache-key: ${{ matrix.go }}
+        cache-key: ${{ matrix.go-version }}
