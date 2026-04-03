@@ -63,10 +63,10 @@ func extractAttribute(a *Attribute, logger Logger, data []byte) error {
 			ad.ByteOrder = nativeEndian
 		case nfUlaAttrHwaddr:
 			hwAddrLen := binary.BigEndian.Uint16(ad.Bytes()[:2])
-			hwAddr := (ad.Bytes())[4 : 4+hwAddrLen]
+			hwAddr := bytes.Clone((ad.Bytes())[4 : 4+hwAddrLen])
 			a.HwAddr = &hwAddr
 		case nfUlaAttrPayload:
-			payload := ad.Bytes()
+			payload := bytes.Clone(ad.Bytes())
 			a.Payload = &payload
 		case nfUlaAttrPrefix:
 			prefix := ad.String()
@@ -97,7 +97,7 @@ func extractAttribute(a *Attribute, logger Logger, data []byte) error {
 			a.HwType = &hwType
 			ad.ByteOrder = nativeEndian
 		case nfUlaAttrHwHeader:
-			hwHeader := ad.Bytes()
+			hwHeader := bytes.Clone(ad.Bytes())
 			a.HwHeader = &hwHeader
 		case nfUlaAttrHwLen:
 			ad.ByteOrder = binary.BigEndian
@@ -106,7 +106,7 @@ func extractAttribute(a *Attribute, logger Logger, data []byte) error {
 			ad.ByteOrder = nativeEndian
 		case nfUlaAttrCt:
 			ad.ByteOrder = binary.BigEndian
-			ct := ad.Bytes()
+			ct := bytes.Clone(ad.Bytes())
 			a.Ct = &ct
 			ad.ByteOrder = nativeEndian
 		case nfUlaAttrCtInfo:
@@ -116,7 +116,7 @@ func extractAttribute(a *Attribute, logger Logger, data []byte) error {
 			ad.ByteOrder = nativeEndian
 		case nfulaAttrL2Hdr:
 			ad.ByteOrder = binary.BigEndian
-			l2hdr := ad.Bytes()
+			l2hdr := bytes.Clone(ad.Bytes())
 			a.Layer2Hdr = &l2hdr
 			ad.ByteOrder = nativeEndian
 		case nfUlaAttrVlan:
