@@ -59,6 +59,7 @@ const (
 	nfUlnlCfgCmdPfUnbind
 )
 
+// See nfulnl_attr_type in nfnetlink_log.h
 const (
 	_ = iota
 	nfUlaAttrPacketHdr
