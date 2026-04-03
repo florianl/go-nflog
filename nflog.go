@@ -211,7 +211,11 @@ func (nflog *Nflog) RegisterWithErrorFunc(ctx context.Context, fn HookFunc, errf
 			return err
 		}
 	}
+
+	nflog.wg.Add(1)
 	go func() {
+		defer nflog.wg.Done()
+
 		defer func() {
 			// unbinding from group
 			_, err = nflog.setConfig(unix.AF_UNSPEC, seq, nflog.group, []netlink.Attribute{
