@@ -82,7 +82,7 @@ const (
 	nfUlaAttrCt
 	nfUlaAttrCtInfo
 	nfUlaAttrVlan
-	nfulaAttrL2Hdr
+	nfUlaAttrL2Hdr
 )
 
 // Attribute contains various elements for nflog elements.

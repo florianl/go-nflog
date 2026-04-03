@@ -30,8 +30,8 @@ func pBytes(v []byte) *[]byte {
 	return &v
 }
 
-func pTime(sec, usec int64) *time.Time {
-	t := time.Unix(sec, usec)
+func pTime(sec, nsec int64) *time.Time {
+	t := time.Unix(sec, nsec)
 	return &t
 }
 
